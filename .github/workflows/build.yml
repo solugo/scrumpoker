@@ -1,4 +1,4 @@
-name: release
+name: build
 
 on:
   workflow_dispatch:
@@ -27,10 +27,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository }}:${{ env.VERSION }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Build Docker Image
+        run: DOCKER_BUILDKIT=1 docker build --tag ghcr.io/${{ github.repository }}:${{ env.VERSION }} .
+      - name: Publish Docker Image
+        run: docker push ghcr.io/${{ github.repository }}:${{ env.VERSION }}

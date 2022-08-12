@@ -6,6 +6,7 @@ RUN gradle check shadowJar --no-daemon
 FROM node:18 AS frontend
 COPY ./frontend /content
 WORKDIR /content
+RUN npm install
 RUN npm run build
 
 FROM openjdk:8-jre-slim
