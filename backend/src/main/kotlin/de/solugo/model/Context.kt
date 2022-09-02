@@ -11,74 +11,71 @@ import java.util.*
 class Context {
     private val rooms = hashMapOf<String, Room>()
 
-    suspend fun removePlayer(playerId: String) {
+    suspend fun removeParticipant(participantId: String) {
         rooms.keys.forEach { roomId ->
-            leaveRoom(roomId, playerId)
+            leaveRoom(roomId, participantId)
         }
     }
 
-    suspend fun joinRoom(roomId: String?, playerId: String, channel: SendChannel<Frame>) {
+    suspend fun joinRoom(
+        roomId: String?,
+        participantId: String,
+        name: String,
+        mode: ParticipantRole = ParticipantRole.PLAYER,
+        channel: SendChannel<Frame>,
+    ) {
         coroutineScope {
 
             val actualRoomId = roomId ?: UUID.randomUUID().toString()
             val room = rooms.computeIfAbsent(actualRoomId) { Room() }
 
-            val player = Player(channel = channel)
-            if (room.members.putIfAbsent(playerId, player) == null) {
-                val playerJoinedRoomEvent = player.toPlayerJoinedRoomEvent(
+            val participant = Participant(channel = channel, name = name, role = mode)
+
+            if (room.members.putIfAbsent(participantId, participant) == null) {
+                val participantJoinedRoomEvent = participant.toParticipantJoinedRoomEvent(
                     roomId = actualRoomId,
-                    playerId = playerId,
-                )
-                val playerInfoUpdatedEvent = player.toPlayerInfoUpdateEvent(
-                    roomId = actualRoomId,
-                    playerId = playerId,
+                    participantId = participantId,
                 )
 
                 room.members.forEach { (memberId, member) ->
                     launch {
-                        member.channel.sendEvent(playerJoinedRoomEvent)
-                    }
-                    launch {
-                        member.channel.sendEvent(playerInfoUpdatedEvent)
+                        member.channel.sendEvent(participantJoinedRoomEvent)
                     }
 
-                    if (memberId != playerId) {
+                    if (memberId != participantId) {
                         launch {
                             member.channel.sendEvent(room.toRoomSelectionChangedEvent(actualRoomId, memberId))
                         }
                         launch {
-                            player.channel.sendEvent(member.toPlayerJoinedRoomEvent(actualRoomId, memberId))
-                        }
-                        launch {
-                            player.channel.sendEvent(member.toPlayerInfoUpdateEvent(actualRoomId, memberId))
+                            participant.channel.sendEvent(member.toParticipantJoinedRoomEvent(actualRoomId, memberId))
                         }
                     }
                 }
 
                 launch {
-                    player.channel.sendEvent(room.toRoomSelectionChangedEvent(actualRoomId, playerId))
+                    participant.channel.sendEvent(room.toRoomSelectionChangedEvent(actualRoomId, participantId))
                 }
                 launch {
-                    player.channel.sendEvent(room.toRoomInfoUpdateEvent(actualRoomId))
+                    participant.channel.sendEvent(room.toRoomInfoUpdateEvent(actualRoomId))
                 }
             }
         }
     }
 
-    suspend fun leaveRoom(roomId: String, playerId: String) {
+    suspend fun leaveRoom(roomId: String, participantId: String) {
         coroutineScope {
             val room = rooms[roomId] ?: return@coroutineScope
-            val player = room.members.remove(playerId) ?: return@coroutineScope
+            val participant = room.members.remove(participantId) ?: return@coroutineScope
 
-            val playerLeftEvent = player.toPlayerLeftRoomEvent(roomId, playerId)
+            val participantLeftEvent = participant.toParticipantLeftRoomEvent(roomId, participantId)
 
             launch {
-                player.channel.sendEvent(playerLeftEvent)
+                participant.channel.sendEvent(participantLeftEvent)
             }
 
             room.members.forEach { (memberId, member) ->
                 launch {
-                    member.channel.sendEvent(playerLeftEvent)
+                    member.channel.sendEvent(participantLeftEvent)
                 }
                 launch {
                     member.channel.sendEvent(room.toRoomSelectionChangedEvent(roomId, memberId))
@@ -88,13 +85,18 @@ class Context {
         }
     }
 
-    suspend fun updateRoomInfo(roomId: String, name: String? = null, options: Map<String, Double?>? = null) {
+    suspend fun updateRoomInfo(
+        roomId: String,
+        name: String? = null,
+        options: Map<String, Double?>? = null,
+    ) {
         coroutineScope {
             val room = rooms[roomId] ?: return@coroutineScope
 
             name?.takeUnless { it == room.name }?.also {
                 room.name = it
             }
+
             options?.takeUnless { it == room.options }?.also {
                 room.options = it
                 room.members.values.forEach { member ->
@@ -119,30 +121,18 @@ class Context {
 
     }
 
-    suspend fun updatePlayerInfo(roomId: String, playerId: String, name: String?) {
+    suspend fun updateParticipantSelection(
+        roomId: String,
+        participantId: String,
+        selection: String?,
+    ) {
         coroutineScope {
             val room = rooms[roomId] ?: return@coroutineScope
-            val player = room.members[playerId] ?: return@coroutineScope
+            val participant = room.members[participantId] ?: return@coroutineScope
 
-            name?.also { player.name = it }
+            check(participant.role == ParticipantRole.PLAYER) { "Only players may change their selection" }
 
-            room.members.values.forEach { member ->
-                launch {
-                    member.channel.sendEvent(
-                        PlayerInfoChangedEvent(roomId = roomId, playerId = playerId, name = player.name)
-                    )
-                }
-
-            }
-        }
-    }
-
-    suspend fun updatePlayerSelection(roomId: String, playerId: String, selection: String?) {
-        coroutineScope {
-            val room = rooms[roomId] ?: return@coroutineScope
-            val member = room.members[playerId] ?: return@coroutineScope
-
-            member.selection = selection
+            participant.selection = selection
 
             room.members.forEach { (memberId, member) ->
                 launch {
@@ -191,47 +181,47 @@ class Context {
     }
 
 
-    private fun Room.toRoomSelectionChangedEvent(roomId: String, playerId: String): RoomSelectionChangedEvent {
+    private fun Room.toRoomSelectionChangedEvent(roomId: String, participantId: String): RoomSelectionChangedEvent {
         return RoomSelectionChangedEvent(
             roomId = roomId,
             visible = visible,
             selections = members.mapValues { (memberId, member) ->
-                member.selection?.let { if (visible || memberId == playerId) it else "" }
+                member.selection?.let { if (visible || memberId == participantId) it else "" }
             },
         )
     }
 
-    private fun Player.toPlayerJoinedRoomEvent(roomId: String, playerId: String): PlayerJoinedRoomEvent {
-        return PlayerJoinedRoomEvent(
+    private fun Participant.toParticipantJoinedRoomEvent(
+        roomId: String,
+        participantId: String
+    ): ParticipantJoinedRoomEvent {
+        return ParticipantJoinedRoomEvent(
             roomId = roomId,
-            playerId = playerId,
-        )
-    }
-
-    private fun Player.toPlayerLeftRoomEvent(roomId: String, playerId: String): PlayerLeftRoomEvent {
-        return PlayerLeftRoomEvent(
-            roomId = roomId,
-            playerId = playerId,
-        )
-    }
-
-    private fun Player.toPlayerInfoUpdateEvent(roomId: String, playerId: String): PlayerInfoChangedEvent {
-        return PlayerInfoChangedEvent(
-            roomId = roomId,
-            playerId = playerId,
+            participantId = participantId,
             name = name,
+            role = role,
         )
     }
 
+    private fun Participant.toParticipantLeftRoomEvent(
+        roomId: String,
+        participantId: String
+    ): ParticipantLeftRoomEvent {
+        return ParticipantLeftRoomEvent(
+            roomId = roomId,
+            participantId = participantId,
+        )
+    }
 
-    private data class Player(
+    private data class Participant(
         val channel: SendChannel<Frame>,
-        var name: String? = null,
+        val role: ParticipantRole = ParticipantRole.PLAYER,
+        val name: String,
         var selection: String? = null,
     )
 
     private data class Room(
-        val members: MutableMap<String, Player> = hashMapOf(),
+        val members: MutableMap<String, Participant> = hashMapOf(),
         var name: String? = null,
         var visible: Boolean = false,
         var options: Map<String, Double?> = mapOf(

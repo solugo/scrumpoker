@@ -1,5 +1,5 @@
 import {BehaviorSubject, queueScheduler} from "rxjs";
-import {Player, Room, Session} from "./Session";
+import {Participant, Room, Session} from "./Session";
 import {SessionEvent} from "./SessionEvent";
 import {SessionRequest} from "./SessionRequest";
 
@@ -20,6 +20,7 @@ export class SessionConnection {
             }
             this.socket.onclose = () => {
                 this.sessionSubject.next({})
+                this.open()
             }
             this.socket.onmessage = (message) => {
                 this.handle(JSON.parse(message.data))
@@ -55,22 +56,18 @@ export class SessionConnection {
         if (session != null) {
             switch (event.type) {
                 case 'sessionStarted': {
-                    session.playerId = event.playerId
+                    session.participantId = event.participantId
                     break
                 }
-                case 'playerJoinedRoom': {
+                case 'participantJoinedRoom': {
                     const room = session.rooms[event.roomId] = session.rooms[event.roomId] ?? new Room()
-                    room.players[event.playerId] = room.players[event.playerId] ?? new Player()
+                    const participant = room.participants[event.participantId] = room.participants[event.participantId] ?? new Participant()
+                    participant.name = event.name
+                    participant.mode = event.mode
                     break
                 }
-                case 'playerLeftRoom': {
-                    delete session.rooms?.[event.roomId]?.players?.[event.playerId]
-                    break
-                }
-                case 'playerInfoChanged': {
-                    const room = session.rooms[event.roomId] = session.rooms[event.roomId] ?? new Room()
-                    const player = room.players[event.playerId] = room.players[event.playerId] ?? new Player()
-                    player.name = event.name
+                case 'participantLeftRoom': {
+                    delete session.rooms?.[event.roomId]?.participants?.[event.participantId]
                     break
                 }
                 case 'roomInfoChanged': {
@@ -82,9 +79,9 @@ export class SessionConnection {
                 case 'roomSelectionChanged': {
                     const room = session.rooms[event.roomId] = session.rooms[event.roomId] ?? new Room()
                     room.visible = event.visible
-                    Object.entries(event.selections).forEach(([playerId, selection]) => {
-                        const player = room.players[playerId] = room.players[playerId] ?? {}
-                        player.selection = selection
+                    Object.entries(event.selections).forEach(([participantId, selection]) => {
+                        const participant = room.participants[participantId] = room.participants[participantId] ?? {}
+                        participant.selection = selection
                     })
 
                     room.state.min = event.min

@@ -28,15 +28,15 @@ fun Application.configureApi() {
 
     routing {
         webSocket("/api") {
-            val playerId = uuid()
+            val participantId = uuid()
 
             try {
-                logger.info("Player $playerId joined")
+                logger.info("Participant $participantId joined")
 
                 supervisorScope {
                     outgoing.sendEvent(
                         SessionStartedEvent(
-                            playerId = playerId,
+                            participantId = participantId,
                         )
                     )
 
@@ -44,23 +44,20 @@ fun Application.configureApi() {
                         try {
                             when (frame) {
                                 is Frame.Text -> when (val request = frame.request) {
-                                    is UpdatePlayerInfoRequest -> context.updatePlayerInfo(
-                                        roomId = request.roomId,
-                                        playerId = playerId,
-                                        name = request.name,
-                                    )
                                     is JoinRoomRequest -> context.joinRoom(
                                         roomId = request.roomId,
-                                        playerId = playerId,
+                                        participantId = participantId,
                                         channel = outgoing,
+                                        name = request.name,
+                                        mode = request.role,
                                     )
                                     is LeaveRoomRequest -> context.leaveRoom(
                                         roomId = request.roomId,
-                                        playerId = playerId,
+                                        participantId = participantId,
                                     )
-                                    is UpdateSelectionRequest -> context.updatePlayerSelection(
+                                    is UpdateSelectionRequest -> context.updateParticipantSelection(
                                         roomId = request.roomId,
-                                        playerId = playerId,
+                                        participantId = participantId,
                                         selection = request.selection,
                                     )
                                     is ResetRoomRequest -> context.resetRoom(
@@ -79,7 +76,7 @@ fun Application.configureApi() {
 
                                 }
                                 is Frame.Close -> {
-                                    logger.info("Player $playerId closed")
+                                    logger.info("Participant $participantId closed")
                                 }
                                 else -> {
                                     logger.info("Could not process frame type: ${frame.frameType}")
@@ -91,8 +88,8 @@ fun Application.configureApi() {
                     }
                 }
             } finally {
-                context.removePlayer(playerId)
-                logger.info("Player $playerId left")
+                context.removeParticipant(participantId)
+                logger.info("Participant $participantId left")
             }
         }
     }

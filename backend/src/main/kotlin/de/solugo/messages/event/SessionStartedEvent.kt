@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("sessionStarted")
 data class SessionStartedEvent(
-    val playerId: String,
+    val participantId: String,
 ) : Event()

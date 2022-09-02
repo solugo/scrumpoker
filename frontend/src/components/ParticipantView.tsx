@@ -1,26 +1,26 @@
 import {Card, styled} from "@mui/material";
 import {HTMLProps} from "react";
-import {Player} from "../logic/Session";
+import {Participant} from "../logic/Session";
 
-export interface PlayerViewProps extends HTMLProps<HTMLElement> {
+export interface ParticipantViewProps extends HTMLProps<HTMLElement> {
     id: string,
-    player: Player
+    participant: Participant
 }
 
 export default styled(
-    (props: PlayerViewProps) => {
+    (props: ParticipantViewProps) => {
         return (
             <div className={props.className}>
                 <div className="header">
-                    {props.player.name ?? props.id}
+                    {props.participant.name ?? props.id}
                 </div>
                 <Card className="card">
-                    {props.player.selection}
+                    {props.participant.selection}
                 </Card>
             </div>
         )
     }, {
-        name: 'PlayerView',
+        name: 'ParticipantView',
     }
 )(
     (props) => `
@@ -39,7 +39,7 @@ export default styled(
             margin: auto;
             width: 80px;
             height: 120px;
-            background-color: ${props.player.selection ? props.theme.palette.primary.main : props.theme.palette.background.paper};
+            background-color: ${props.participant.selection ? props.theme.palette.primary.main : props.theme.palette.background.paper};
         }
     `
 )

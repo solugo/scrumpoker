@@ -1,18 +1,19 @@
 export class Session {
     readonly rooms: {[key: string]: Room} = {}
-    playerId?: string
+    participantId?: string
 }
 
 export class Room {
-    readonly players: { [key: string]: Player } = {}
+    readonly participants: { [key: string]: Participant } = {}
     readonly state: State = new State()
     visible: boolean = false
     name?: string
     options?: { [key: string]: number }
 }
 
-export class Player {
+export class Participant {
     name?: string
+    mode?: string
     selection?: string | null
 }
 

@@ -1,29 +1,32 @@
-import React, {useEffect} from "react";
-import {useNavigate, useParams} from "react-router-dom";
-import {useSession, useSessionApi} from "../components/SessionScope";
-import RoomView from "../components/RoomView";
+import React from "react";
+import {useParams} from "react-router-dom";
+import {useSession} from "../components/SessionScope";
+import RoomDisplayView from "../components/RoomDisplayView";
+import RoomJoinView from "../components/RoomJoinView";
 
-export default function RoomRoute() {
+const RoomRoute = () => {
     const {roomId} = useParams<{ roomId: string }>()
 
     const session = useSession()
-    const api = useSessionApi()
-    const playerId = session?.playerId
     const room = roomId ? session?.rooms?.[roomId] : undefined
+    const participantId = session?.participantId
+    const participant = participantId ? room?.participants?.[participantId] : undefined
 
-    useEffect(() => {
-        if (roomId) {
-            api?.joinRoom(roomId)
+    if (roomId) {
+        if (room && participantId && participant) {
+            return (
+                <RoomDisplayView roomId={roomId} room={room} participantId={participantId} participant={participant}/>
+            )
+        } else {
+            return (
+                <RoomJoinView roomId={roomId}/>
+            )
         }
-    })
-
-    if (playerId && roomId && room) {
-        return (
-            <RoomView playerId={playerId} roomId={roomId} room={room}/>
-        )
     } else {
         return (
-            <div/>
+            <div>Error</div>
         )
     }
 }
+
+export default RoomRoute

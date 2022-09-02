@@ -3,6 +3,7 @@ package de.solugo
 import de.solugo.messages.event.Event
 import de.solugo.messages.request.Request
 import io.ktor.websocket.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.decodeFromString
@@ -20,6 +21,7 @@ fun uuid() = UUID.randomUUID().toString()
 
 val Frame.Text.request: Request; get() = json.decodeFromString(readText())
 
+@OptIn(ExperimentalCoroutinesApi::class)
 suspend inline fun SendChannel<Frame>.sendEvent(message: Event) {
     withTimeoutOrNull(1.seconds) {
         if (!isClosedForSend) {

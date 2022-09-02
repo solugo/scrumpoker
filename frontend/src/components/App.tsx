@@ -1,7 +1,7 @@
 import React, {HTMLProps} from 'react';
-import {Link, Route, Routes, useNavigate} from "react-router-dom";
+import {Route, Routes, useNavigate} from "react-router-dom";
 import {useSession} from "./SessionScope";
-import {Box, Button, IconButton, styled, Toolbar, Typography} from "@mui/material";
+import {Box, IconButton, styled, Toolbar, Typography} from "@mui/material";
 import IndexRoute from "../routes/IndexRoute";
 import RoomRoute from "../routes/RoomRoute";
 import {v4 as uuid} from 'uuid';
@@ -22,7 +22,7 @@ const App = (props: HTMLProps<HTMLElement>) => {
                     Scrum Poker
                 </Typography>
 
-                <Box sx={{flexGrow: 1}} />
+                <Box sx={{flexGrow: 1}}/>
                 <IconButton onClick={addRoom} color="inherit"> <Add/> </IconButton>
             </Toolbar>
             <div className="content">

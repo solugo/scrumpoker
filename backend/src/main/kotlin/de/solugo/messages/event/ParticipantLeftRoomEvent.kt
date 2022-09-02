@@ -4,8 +4,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@SerialName("playerLeftRoom")
-data class PlayerLeftRoomEvent(
+@SerialName("participantLeftRoom")
+data class ParticipantLeftRoomEvent(
     val roomId: String,
-    val playerId: String,
+    val participantId: String,
 ) : Event()

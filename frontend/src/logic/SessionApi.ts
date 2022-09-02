@@ -8,10 +8,12 @@ export class SessionApi {
     constructor(private connection: SessionConnection | undefined) {
     }
 
-    joinRoom(roomId?: string) {
+    joinRoom(name: string, mode: string, roomId?: string) {
         this.connection?.send({
             type: 'joinRoom',
             roomId: roomId,
+            name: name,
+            mode: mode,
         })
     }
 

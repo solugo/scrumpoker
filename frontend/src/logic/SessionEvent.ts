@@ -1,6 +1,6 @@
 export interface SessionStartedEvent {
     type: 'sessionStarted'
-    playerId: string
+    participantId: string
 }
 
 export interface RoomInfoUpdatedEvent {
@@ -20,29 +20,23 @@ export interface RoomSelectionChangedEvent {
     max: number | null
 }
 
-export interface PlayerJoinedRoomEvent {
-    type: 'playerJoinedRoom'
+export interface ParticipantJoinedRoomEvent {
+    type: 'participantJoinedRoom'
     roomId: string
-    playerId: string
-}
-
-export interface PlayerLeftRoomEvent {
-    type: 'playerLeftRoom'
-    roomId: string
-    playerId: string
-}
-
-export interface PlayerInfoChangedEvent {
-    type: 'playerInfoChanged'
-    roomId: string
-    playerId: string
+    participantId: string
     name: string
+    mode: string
+}
+
+export interface ParticipantLeftRoomEvent {
+    type: 'participantLeftRoom'
+    roomId: string
+    participantId: string
 }
 
 export type SessionEvent =
     | SessionStartedEvent
-    | PlayerJoinedRoomEvent
-    | PlayerLeftRoomEvent
-    | PlayerInfoChangedEvent
+    | ParticipantJoinedRoomEvent
+    | ParticipantLeftRoomEvent
     | RoomInfoUpdatedEvent
     | RoomSelectionChangedEvent

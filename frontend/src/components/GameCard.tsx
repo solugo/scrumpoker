@@ -2,21 +2,31 @@ import React from "react";
 import {styled} from "@mui/material";
 import classNames from "classnames";
 
+type GameCardType = "SELECT" | "VIEW" | "DISABLED"
+
 interface GameCardProps {
     className?: string
     selected: boolean
+    type: GameCardType
     title?: string | undefined
     value?: string | null
     onClick?: () => void
 }
 
 const GameCard = (props: GameCardProps) => {
+
+    const cardClasses = classNames({
+        "card": true,
+        "card-active": props.type === "SELECT",
+        "card-selected": props.selected,
+    })
+
     return (
         <div className={props.className}>
             <div className="title">
                 {props.title}
             </div>
-            <div className={classNames("card", {"card-selected": props.selected})} onClick={() => props.onClick?.()}>
+            <div className={cardClasses} onClick={() => props.onClick?.()}>
                 <span>{props.value}</span>
             </div>
         </div>
@@ -39,12 +49,24 @@ export default styled(GameCard)((props) => (
             display: "grid",
             alignItems: "center",
             justifyContent: "center",
+            borderWidth: "0.1rem",
             borderRadius: "0.4rem",
             fontSize: "2rem",
+            borderStyle: "dashed",
+            color: props.theme.palette.primary.contrastText,
+            borderColor: props.theme.palette.grey.A700,
+            backgroundColor: "transparent",
+        },
+        ".card-active": {
             color: props.theme.palette.primary.contrastText,
             backgroundColor: props.theme.palette.grey.A700,
         },
-        ".card:hover": {
+        ".card-selected": {
+            borderStyle: "solid",
+            borderColor: props.theme.palette.secondary.dark,
+            backgroundColor: props.theme.palette.secondary.main,
+        },
+        ".card-active:hover": {
             position: "relative",
             display: "grid",
             alignItems: "center",
@@ -52,10 +74,8 @@ export default styled(GameCard)((props) => (
             borderRadius: "0.4rem",
             fontSize: "2rem",
             color: props.theme.palette.primary.contrastText,
+            borderColor: props.theme.palette.secondary.main,
             backgroundColor: props.theme.palette.secondary.light,
-        },
-        ".card-selected": {
-            backgroundColor: props.theme.palette.secondary.main,
         },
     }
 ))
