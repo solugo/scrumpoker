@@ -10,7 +10,6 @@ resources:
 
 image:
   repository: 'ghcr.io/solugo/scrumpoker'
-  tag: latest
 
 service:
   port: 80

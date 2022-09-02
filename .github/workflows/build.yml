@@ -35,8 +35,9 @@ jobs:
         run: mkdir ~/.kube && echo '${{ secrets.KUBECONFIG }}' > ~/.kube/config
       - name: Deploy to Kubernetes
         run: |
-          helm upgrade -i scrumpoker ./chart \
-          --set image.tag=${{ env.VERSION }} \
+          helm package --app-version=${{ env.VERSION }} ./chart \
+          && \
+          helm upgrade -i scrumpoker ./scrumpoker-*.tgz \
           --set ingress.enabled=true \
           --set ingress.domain=poker.solugo.de \
           --set ingress.annotations."kubernetes\.io/ingress\.class"=public \

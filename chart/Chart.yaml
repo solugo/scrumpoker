@@ -1,8 +1,8 @@
 apiVersion: v2
 name: scrumpoker
 description: Service for persistence of session information.
-version: 0.1.0
-appVersion: 0.1.0
+version: 1.0.0
+appVersion: 0.0.0
 #----
 keywords:
   - thieme
