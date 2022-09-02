@@ -40,10 +40,10 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
                     ([participantId, participant]) => (
                         <div className="participant" key={participantId}>
                             <GameCard
-                                type={participant.mode === "PLAYER" ? "VIEW" : "DISABLED"}
+                                type={participant.role === "PLAYER" ? "VIEW" : "DISABLED"}
                                 selected={participant.selection !== null}
                                 title={participant.name || "🕶️"}
-                                value={participant.mode === "SPECTATOR" ? "👁️" : (room.visible ? participant.selection : "")}
+                                value={participant.role === "SPECTATOR" ? "👁️" : (room.visible ? participant.selection : "")}
                             />
                         </div>
                     )

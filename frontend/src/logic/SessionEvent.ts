@@ -25,7 +25,7 @@ export interface ParticipantJoinedRoomEvent {
     roomId: string
     participantId: string
     name: string
-    mode: string
+    role: string
 }
 
 export interface ParticipantLeftRoomEvent {
@@ -34,7 +34,13 @@ export interface ParticipantLeftRoomEvent {
     participantId: string
 }
 
+export interface ErrorEvent {
+    type: 'error'
+    message: string
+}
+
 export type SessionEvent =
+    | ErrorEvent
     | SessionStartedEvent
     | ParticipantJoinedRoomEvent
     | ParticipantLeftRoomEvent

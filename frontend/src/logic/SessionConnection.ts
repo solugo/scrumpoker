@@ -55,6 +55,10 @@ export class SessionConnection {
 
         if (session != null) {
             switch (event.type) {
+                case 'error': {
+                    console.error("Error from backend", event.message)
+                    break
+                }
                 case 'sessionStarted': {
                     session.participantId = event.participantId
                     break
@@ -63,7 +67,7 @@ export class SessionConnection {
                     const room = session.rooms[event.roomId] = session.rooms[event.roomId] ?? new Room()
                     const participant = room.participants[event.participantId] = room.participants[event.participantId] ?? new Participant()
                     participant.name = event.name
-                    participant.mode = event.mode
+                    participant.role = event.role
                     break
                 }
                 case 'participantLeftRoom': {

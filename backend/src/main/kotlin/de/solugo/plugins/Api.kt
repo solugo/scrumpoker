@@ -1,5 +1,6 @@
 package de.solugo.plugins
 
+import de.solugo.messages.event.ErrorEvent
 import de.solugo.messages.event.SessionStartedEvent
 import de.solugo.messages.request.*
 import de.solugo.model.Context
@@ -83,6 +84,7 @@ fun Application.configureApi() {
                                 }
                             }
                         } catch (ex: Exception) {
+                            outgoing.sendEvent(ErrorEvent(ex.message ?: "Unknown error"))
                             logger.error("Could not process frame: $frame", ex)
                         }
                     }

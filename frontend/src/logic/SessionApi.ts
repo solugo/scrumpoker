@@ -13,7 +13,7 @@ export class SessionApi {
             type: 'joinRoom',
             roomId: roomId,
             name: name,
-            mode: mode,
+            role: mode,
         })
     }
 

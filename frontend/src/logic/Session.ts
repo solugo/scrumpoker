@@ -13,7 +13,7 @@ export class Room {
 
 export class Participant {
     name?: string
-    mode?: string
+    role?: string
     selection?: string | null
 }
 

@@ -2,7 +2,7 @@ export interface JoinRoomRequest {
     type: 'joinRoom'
     roomId?: string
     name: string,
-    mode?: string,
+    role?: string,
 }
 
 export interface ResetRoomRequest {
