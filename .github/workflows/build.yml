@@ -32,7 +32,7 @@ jobs:
       - name: Publish Docker Image
         run: docker push ghcr.io/${{ github.repository }}
       - name: Configure Kubernetes
-        run: echo '${{ secrets.KUBECONFIG }}' > ~/.kube/config
+        run: mkdir ~/.kube && echo '${{ secrets.KUBECONFIG }}' > ~/.kube/config
       - name: Deploy to Kubernetes
         run: |
           helm upgrade -i scrumpoker ./chart \
