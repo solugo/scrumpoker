@@ -28,6 +28,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Docker Image
-        run: DOCKER_BUILDKIT=1 docker build --tag ghcr.io/${{ github.repository }}:${{ env.VERSION }} .
+        run: DOCKER_BUILDKIT=1 docker build --tag ghcr.io/${{ github.repository }}:${{ env.VERSION }} --tag ghcr.io/${{ github.repository }}:latest .
       - name: Publish Docker Image
-        run: docker push ghcr.io/${{ github.repository }}:${{ env.VERSION }}
+        run: docker push ghcr.io/${{ github.repository }}   
+      - name: Deploy to Kubernetes
+        uses: deliverybot/helm@v1
+        with:
+          release: scrumpoker
+          namespace: default
+          chart: ./chart
+          chart-version: '${{ env.VERSION }}'
+          token: '${{ github.token }}'
+          values: |
+            image:            
+              repository: 'ghcr.io/${{ github.repository }}'
+              tag: '${{ env.VERSION }}'
+            ingress:
+              enabled: true
+              domain: 'poker.solugo.de'
+              annotations:
+                kubernetes.io/ingress.class: public
+                cert-manager.io/cluster-issuer: letsencrypt
+        env:
+          KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'

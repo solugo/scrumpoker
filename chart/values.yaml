@@ -1,0 +1,19 @@
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 250Mi
+  limits:
+    cpu: 500m
+    memory: 500Mi
+
+image:
+  tag: latest
+
+service:
+  http: 80
+
+ingress:
+  domain: poker.solugo.de
+  enabled: true

@@ -1,0 +1,19 @@
+apiVersion: v2
+name: scrumpoker
+description: Service for persistence of session information.
+version: 0.1.0
+appVersion: 0.1.0
+#----
+keywords:
+  - thieme
+home: https://dev.azure.com/ThiemeDevOps/TAAL
+sources:
+  - https://dev.azure.com/ThiemeDevOps/_git/TAAL-SERVICES
+icon: https://www.thieme.de/statics/files/img/layout/thieme_sprite.png
+maintainers:
+  - name: Thieme Gruppe
+    email: support@thieme.de
+    url: https://www.thieme.de
+#----
+type: application
+deprecated: false
