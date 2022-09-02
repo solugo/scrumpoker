@@ -1,6 +1,6 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "chart.fullname" . -}}
-{{- $svcPort := .Values.service.http -}}
+{{- $svcPort := .Values.service.port -}}
 {{- $domain :=  tpl .Values.ingress.domain $ -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}

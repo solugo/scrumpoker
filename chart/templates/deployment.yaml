@@ -30,23 +30,10 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.http }}
+              containerPort: 8080
               protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          # ---
-          env:
-            - name: JAVA_TOOL_OPTIONS
-              value: "-Djava.awt.headless=true -XX:MaxRAMPercentage=80"
-          # ---
-          volumeMounts:
-            - name: "config"
-              mountPath: "/app/application.yml"
-              subPath: "application.yml"
-      volumes:
-        - name: "config"
-          configMap:
-            name: "{{ .Release.Name }}-config"
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -1,9 +1,0 @@
-image:
-  repository: 'ghcr.io/${{ github.repository }}'
-  tag: '${{ env.VERSION }}'
-ingress:
-  enabled: true
-  domain: 'poker.solugo.de'
-  annotations:
-    kubernetes.io/ingress.class: public
-    cert-manager.io/cluster-issuer: letsencrypt

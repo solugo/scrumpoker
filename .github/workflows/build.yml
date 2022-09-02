@@ -34,4 +34,11 @@ jobs:
       - name: Configure Kubernetes
         run: echo '${{ secrets.KUBECONFIG }}' > ~/.kube/config
       - name: Deploy to Kubernetes
-        run: helm upgrade -f ./chart/values-solugo.yaml scrumpoker ./chart
+        run: |
+          helm upgrade -i scrumpoker ./chart \
+          --set image.tag=${{ env.VERSION }} \
+          --set ingress.enabled=true \
+          --set ingress.domain=poker.solugo.de \
+          --set ingress.annotations."kubernetes\.io/ingress\.class"=public \
+          --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+          ;

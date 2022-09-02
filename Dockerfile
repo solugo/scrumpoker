@@ -9,9 +9,9 @@ WORKDIR /content
 RUN npm install
 RUN npm run build
 
-FROM openjdk:8-jre-slim
+FROM openjdk:17-alpine
 COPY --from=backend /content/build/libs/*-all.jar /app/server.jar
 COPY --from=frontend /content/build /app/frontend
 
 WORKDIR "/app"
-ENTRYPOINT ["java", "-jar","server.jar"]
+ENTRYPOINT ["java", "-Djava.awt.headless=true", "-XX:MaxRAMPercentage=80", "-jar","server.jar"]
