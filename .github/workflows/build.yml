@@ -30,7 +30,7 @@ jobs:
       - name: Build Docker Image
         run: DOCKER_BUILDKIT=1 docker build --tag ghcr.io/${{ github.repository }}:${{ env.VERSION }} --tag ghcr.io/${{ github.repository }}:latest .
       - name: Publish Docker Image
-        run: docker push ghcr.io/${{ github.repository }}
+        run: docker push ghcr.io/${{ github.repository }}:${{ env.VERSION }} && docker push ghcr.io/${{ github.repository }}:latest
       - name: Configure Kubernetes
         run: mkdir ~/.kube && echo '${{ secrets.KUBECONFIG }}' > ~/.kube/config
       - name: Deploy to Kubernetes
