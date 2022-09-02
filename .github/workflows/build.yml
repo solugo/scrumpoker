@@ -36,9 +36,9 @@ jobs:
         with:
           release: scrumpoker
           namespace: default
+          version: '${{ env.VERSION }}'
           chart: ./chart
           chart-version: '${{ env.VERSION }}'
-          token: '${{ github.token }}'
           values: |
             image:            
               repository: 'ghcr.io/${{ github.repository }}'
