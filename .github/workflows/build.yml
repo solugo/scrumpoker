@@ -30,24 +30,8 @@ jobs:
       - name: Build Docker Image
         run: DOCKER_BUILDKIT=1 docker build --tag ghcr.io/${{ github.repository }}:${{ env.VERSION }} --tag ghcr.io/${{ github.repository }}:latest .
       - name: Publish Docker Image
-        run: docker push ghcr.io/${{ github.repository }}   
+        run: docker push ghcr.io/${{ github.repository }}
+      - name: Configure Kubernetes
+        run: echo '${{ secrets.KUBECONFIG }}' > ~/.kube/config
       - name: Deploy to Kubernetes
-        uses: deliverybot/helm@v1
-        with:
-          release: scrumpoker
-          namespace: default
-          version: '${{ env.VERSION }}'
-          chart: ./chart
-          chart-version: '${{ env.VERSION }}'
-          values: |
-            image:            
-              repository: 'ghcr.io/${{ github.repository }}'
-              tag: '${{ env.VERSION }}'
-            ingress:
-              enabled: true
-              domain: 'poker.solugo.de'
-              annotations:
-                kubernetes.io/ingress.class: public
-                cert-manager.io/cluster-issuer: letsencrypt
-        env:
-          KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
+        run: helm upgrade -f ./chart/values-solugo.yaml scrumpoker ./chart

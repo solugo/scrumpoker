@@ -9,11 +9,11 @@ resources:
     memory: 500Mi
 
 image:
+  repository: 'ghcr.io/solugo/scrumpoker'
   tag: latest
 
 service:
   http: 80
 
 ingress:
-  domain: poker.solugo.de
-  enabled: true
+  enabled: false
