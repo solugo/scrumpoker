@@ -3,6 +3,9 @@ package de.solugo.model
 import de.solugo.messages.event.*
 import de.solugo.sendEvent
 import io.ktor.websocket.*
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.Gauge
+import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -10,6 +13,12 @@ import java.util.*
 
 class Context {
     private val rooms = hashMapOf<String, Room>()
+
+    private val metrics = ContextMetrics(
+        registry = Metrics.globalRegistry,
+        roomCount = { rooms.size },
+        playerCount = { rooms.values.sumOf { it.members.size } },
+    )
 
     suspend fun removeParticipant(participantId: String) {
         rooms.keys.forEach { roomId ->
@@ -27,9 +36,14 @@ class Context {
         coroutineScope {
 
             val actualRoomId = roomId ?: UUID.randomUUID().toString()
-            val room = rooms.computeIfAbsent(actualRoomId) { Room() }
+            val room = rooms.computeIfAbsent(actualRoomId) {
+                metrics.roomCreateCounter.increment()
+                Room()
+            }
 
             val participant = Participant(channel = channel, name = name, role = mode)
+
+            metrics.playerJoinCounter.increment()
 
             if (room.members.putIfAbsent(participantId, participant) == null) {
                 val participantJoinedRoomEvent = participant.toParticipantJoinedRoomEvent(
@@ -64,6 +78,9 @@ class Context {
 
     suspend fun leaveRoom(roomId: String, participantId: String) {
         coroutineScope {
+
+            metrics.playerLeaveCounter.increment()
+
             val room = rooms[roomId] ?: return@coroutineScope
             val participant = room.members.remove(participantId) ?: return@coroutineScope
 
@@ -80,6 +97,11 @@ class Context {
                 launch {
                     member.channel.sendEvent(room.toRoomSelectionChangedEvent(roomId, memberId))
                 }
+            }
+
+            if (room.members.isEmpty()) {
+                metrics.roomRemoveCounter.increment()
+                rooms.remove(roomId)
             }
 
         }
@@ -127,6 +149,9 @@ class Context {
         selection: String?,
     ) {
         coroutineScope {
+
+            metrics.playerSelectCounter.increment()
+
             val room = rooms[roomId] ?: return@coroutineScope
             val participant = room.members[participantId] ?: return@coroutineScope
 
@@ -145,6 +170,8 @@ class Context {
     suspend fun resetRoom(roomId: String) {
         coroutineScope {
 
+            metrics.roundStartCounter.increment()
+
             val room = rooms[roomId] ?: return@coroutineScope
             room.visible = false
 
@@ -161,6 +188,11 @@ class Context {
 
     suspend fun revealRoom(roomId: String, visible: Boolean) {
         coroutineScope {
+
+            when (visible) {
+                true -> metrics.roundRevealCounter.increment()
+                else -> metrics.roundHideCounter.increment()
+            }
 
             val room = rooms[roomId] ?: return@coroutineScope
             room.visible = visible
