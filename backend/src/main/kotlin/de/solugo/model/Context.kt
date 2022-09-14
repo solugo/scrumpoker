@@ -1,15 +1,18 @@
 package de.solugo.model
 
-import de.solugo.messages.event.*
+import de.solugo.messages.event.ParticipantJoinedRoomEvent
+import de.solugo.messages.event.ParticipantLeftRoomEvent
+import de.solugo.messages.event.RoomInfoChangedEvent
+import de.solugo.messages.event.RoomSelectionChangedEvent
 import de.solugo.sendEvent
 import io.ktor.websocket.*
-import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import java.lang.System.currentTimeMillis
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class Context {
     private val rooms = hashMapOf<String, Room>()
@@ -84,6 +87,8 @@ class Context {
             val room = rooms[roomId] ?: return@coroutineScope
             val participant = room.members.remove(participantId) ?: return@coroutineScope
 
+            metrics.playerDurationTimer.record(currentTimeMillis() - participant.created, TimeUnit.MILLISECONDS)
+
             val participantLeftEvent = participant.toParticipantLeftRoomEvent(roomId, participantId)
 
             launch {
@@ -100,7 +105,10 @@ class Context {
             }
 
             if (room.members.isEmpty()) {
+
                 metrics.roomRemoveCounter.increment()
+                metrics.roomDurationTimer.record(currentTimeMillis() - room.created, TimeUnit.MILLISECONDS)
+                metrics.roundDurationTimer.record(currentTimeMillis() - room.round.created, TimeUnit.MILLISECONDS)
                 rooms.remove(roomId)
             }
 
@@ -121,9 +129,7 @@ class Context {
 
             options?.takeUnless { it == room.options }?.also {
                 room.options = it
-                room.members.values.forEach { member ->
-                    member.selection = null
-                }
+                room.round.selections.clear()
 
                 room.members.forEach { (memberId, member) ->
                     launch {
@@ -157,7 +163,8 @@ class Context {
 
             check(participant.role == ParticipantRole.PLAYER) { "Only players may change their selection" }
 
-            participant.selection = selection
+
+            room.round.selections[participantId] = selection
 
             room.members.forEach { (memberId, member) ->
                 launch {
@@ -173,11 +180,10 @@ class Context {
             metrics.roundStartCounter.increment()
 
             val room = rooms[roomId] ?: return@coroutineScope
-            room.visible = false
 
-            room.members.values.forEach { member ->
-                member.selection = null
-            }
+            metrics.roundDurationTimer.record(currentTimeMillis() - room.round.created, TimeUnit.MILLISECONDS)
+
+            room.round = Round()
 
             room.members.forEach { (memberId, member) ->
                 launch { member.channel.sendEvent(room.toRoomSelectionChangedEvent(roomId, memberId)) }
@@ -195,13 +201,23 @@ class Context {
             }
 
             val room = rooms[roomId] ?: return@coroutineScope
-            room.visible = visible
+            room.round.visible = visible
 
             room.members.forEach { (memberId, member) ->
                 launch { member.channel.sendEvent(room.toRoomSelectionChangedEvent(roomId, memberId)) }
             }
         }
 
+    }
+
+    suspend fun removeRoom(roomId: String) {
+        coroutineScope {
+            val room = rooms[roomId] ?: return@coroutineScope
+            metrics.roomRemoveCounter.increment()
+            metrics.roomDurationTimer.record(currentTimeMillis() - room.created, TimeUnit.MILLISECONDS)
+            metrics.roundDurationTimer.record(currentTimeMillis() - room.round.created, TimeUnit.MILLISECONDS)
+            rooms.remove(roomId)
+        }
     }
 
     private fun Room.toRoomInfoUpdateEvent(roomId: String): RoomInfoChangedEvent {
@@ -216,9 +232,9 @@ class Context {
     private fun Room.toRoomSelectionChangedEvent(roomId: String, participantId: String): RoomSelectionChangedEvent {
         return RoomSelectionChangedEvent(
             roomId = roomId,
-            visible = visible,
-            selections = members.mapValues { (memberId, member) ->
-                member.selection?.let { if (visible || memberId == participantId) it else "" }
+            visible = round.visible,
+            selections = members.keys.associateWith { memberId ->
+                round.selections[memberId]?.let { if (round.visible || memberId == participantId) it else "" }
             },
         )
     }
@@ -246,16 +262,17 @@ class Context {
     }
 
     private data class Participant(
+        val created: Long = currentTimeMillis(),
         val channel: SendChannel<Frame>,
         val role: ParticipantRole = ParticipantRole.PLAYER,
         val name: String,
-        var selection: String? = null,
     )
 
     private data class Room(
+        val created: Long = currentTimeMillis(),
         val members: MutableMap<String, Participant> = hashMapOf(),
         var name: String? = null,
-        var visible: Boolean = false,
+        var round: Round = Round(),
         var options: Map<String, Double?> = mapOf(
             "½" to 0.5,
             "1" to 1.0,
@@ -269,6 +286,12 @@ class Context {
             "☕" to null,
             "⚡" to null,
         ),
+    )
+
+    private data class Round(
+        val created: Long = currentTimeMillis(),
+        val selections: MutableMap<String, String?> = hashMapOf(),
+        var visible: Boolean = false,
     )
 
 }
