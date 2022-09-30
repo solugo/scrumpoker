@@ -33,6 +33,27 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
         api?.resetRoom(roomId)
     }
 
+    let statTotal = 0
+    const statValues: { [key: string]: number } = {}
+
+    if (room.visible) {
+        Object.values(participants).forEach((participant) => {
+            if (participant.selection) {
+                statTotal += 1
+
+            }
+        })
+
+        Object.values(participants).forEach((participant) => {
+            if (participant.selection) {
+                const selection = participant.selection || ""
+                statValues[selection] = (statValues[selection] || 0) + (100 / statTotal)
+            }
+        })
+    }
+
+    const statEntries = Object.entries(statValues).sort((a, b) => b[1] - a[1])
+
     return (
         <div className={props.className}>
             <div className="participantList">
@@ -49,15 +70,24 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
                     )
                 )}
             </div>
+            <div className="statsList">
+                {statEntries.map(
+                    ([title, statValue]) => (
+                        <div key={title} className="statContainer">
+                            <div className="statEntry" key={title}>
+                                <div className="statSpace" style={{height: `${100 - statValue}%`}}></div>
+                            </div>
+                            <div className="statNumber">{title}</div>
+                        </div>
+
+                    )
+                )}
+            </div>
             <div className="actionList">
-                <Button
-                    variant="contained"
-                    className="action"
-                    onClick={reveal}
-                >
+                <Button color="success" variant="contained" className="action" onClick={reveal}>
                     {(room.visible) ? "Hide" : "Reveal"}
                 </Button>
-                <Button variant="contained" className="action" onClick={restart}>Restart</Button>
+                <Button color="warning" variant="contained" className="action" onClick={restart}>Restart</Button>
             </div>
             <div className="optionList">
                 {options.map(
@@ -77,44 +107,65 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
     )
 }
 
-export default styled(RoomDisplayView)(
+export default styled(RoomDisplayView)((props) => (
     {
         display: "grid",
-        gap: "2rem",
-        gridTemplateRows: 'auto 2rem 9rem',
+        gap: "1rem",
+        gridTemplateRows: '1fr auto auto auto',
         padding: "1rem",
         ".actionList": {
             display: "flex",
             flexWrap: "wrap",
             gap: "1rem",
             justifyContent: "center",
+            "button": {
+                width: "8rem"
+            },
         },
-
         ".optionList": {
             display: "flex",
             flexWrap: "wrap",
             gap: "1rem",
             justifyContent: "center",
         },
-
         ".option": {
             display: "grid",
             width: "4rem",
             height: "6rem",
         },
-
         ".participantList": {
             display: "flex",
             flexWrap: "wrap",
             gap: "1rem",
             justifyContent: "center",
         },
-
         ".participant": {
             display: "grid",
             width: "8rem",
             height: "12rem",
         },
-
+        ".statsList": {
+            display: "flex",
+            flexGrow: "content",
+            gap: "1rem",
+            height: "auto",
+            justifyContent: "center",
+            alignItems: "stretch",
+        },
+        ".statEntry": {
+            width: "2rem",
+            height: "3rem",
+            border: "solid 2px",
+            backgroundColor: props.theme.palette.secondary.main,
+            borderColor: props.theme.palette.secondary.main,
+        },
+        ".statSpace": {
+            marginTop: "auto",
+            backgroundColor: props.theme.palette.background.default,
+        },
+        ".statNumber": {
+            paddingTop: "0.5rem",
+            textAlign: "center",
+        },
     }
-)
+))
