@@ -40,14 +40,13 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
         Object.values(participants).forEach((participant) => {
             if (participant.selection) {
                 statTotal += 1
-
             }
         })
 
         Object.values(participants).forEach((participant) => {
             if (participant.selection) {
                 const selection = participant.selection || ""
-                statValues[selection] = (statValues[selection] || 0) + (100 / statTotal)
+                statValues[selection] = (statValues[selection] || 0) + 1
             }
         })
     }
@@ -72,15 +71,17 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
             </div>
             <div className="statsList">
                 {statEntries.map(
-                    ([title, statValue]) => (
-                        <div key={title} className="statContainer">
-                            <div className="statEntry" key={title}>
-                                <div className="statSpace" style={{height: `${100 - statValue}%`}}></div>
+                    ([title, statValue]) => {
+                        const percentage = 100.0 * statValue / statTotal
+                        return (
+                            <div key={title} className="statContainer">
+                                <div className="statEntry" key={title}>
+                                    <div className="statSpace" style={{height: `${100 - percentage}%`}}></div>
+                                </div>
+                                <div className="statNumber">{title}</div>
                             </div>
-                            <div className="statNumber">{title}</div>
-                        </div>
-
-                    )
+                        )
+                    }
                 )}
             </div>
             <div className="actionList">
@@ -91,16 +92,18 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
             </div>
             <div className="optionList">
                 {options.map(
-                    ([selection, value]) => (
-                        <div className="option" key={selection}>
-                            <GameCard
-                                type="SELECT"
-                                selected={props.participant.selection === selection}
-                                value={selection}
-                                onClick={() => updateSelection(selection)}
-                            />
-                        </div>
-                    )
+                    ([selection, value]) => {
+                        return (
+                            <div className="option" key={selection}>
+                                <GameCard
+                                    type="SELECT"
+                                    selected={props.participant.selection === selection}
+                                    value={selection}
+                                    onClick={() => updateSelection(selection)}
+                                />
+                            </div>
+                        )
+                    }
                 )}
             </div>
         </div>
@@ -153,11 +156,11 @@ export default styled(RoomDisplayView)((props) => (
             alignItems: "stretch",
         },
         ".statEntry": {
-            width: "2rem",
+            aspectRatio: "2 / 4",
+            border: "solid 1px",
             height: "3rem",
-            border: "solid 2px",
             backgroundColor: props.theme.palette.secondary.main,
-            borderColor: props.theme.palette.secondary.main,
+            borderColor: props.theme.palette.secondary.dark,
         },
         ".statSpace": {
             marginTop: "auto",

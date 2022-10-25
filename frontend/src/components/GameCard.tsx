@@ -45,6 +45,7 @@ export default styled(GameCard)((props) => (
             textOverflow: "ellipsis",
         },
         ".card": {
+            aspectRatio: "3 / 4",
             position: "relative",
             display: "grid",
             alignItems: "center",
