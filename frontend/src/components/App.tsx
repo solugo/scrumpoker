@@ -9,7 +9,6 @@ import {Add} from "@mui/icons-material";
 
 const App = (props: HTMLProps<HTMLElement>) => {
     const navigate = useNavigate()
-    const session = useSession()
 
     function addRoom() {
         navigate(`/rooms/${uuid()}`, {})

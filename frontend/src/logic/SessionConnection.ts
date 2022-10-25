@@ -15,19 +15,22 @@ export class SessionConnection {
             const location = window.location
             const protocol = (location.protocol === "https:") ? "wss:" : "ws:"
             this.socket = new WebSocket(`${protocol}//${location.host}/api`)
-            this.socket.onopen = () => {
+            this.socket.onopen = (event) => {
                 this.sessionSubject.next({session: new Session()})
             }
-            this.socket.onclose = () => {
+            this.socket.onclose = (event) => {
                 this.sessionSubject.next({})
                 this.open()
+            }
+            this.socket.onerror = (event) => {
+                this.sessionSubject.next({})
+                setTimeout(() => this.open(), 1000)
             }
             this.socket.onmessage = (message) => {
                 this.handle(JSON.parse(message.data))
             }
             return () => {
-                this.socket?.close()
-                this.socket = undefined
+                this.close()
             }
         } else {
             return () => {
@@ -48,6 +51,7 @@ export class SessionConnection {
 
     close() {
         this.socket?.close()
+        this.socket = undefined
     }
 
     handle(event: SessionEvent) {
