@@ -20,7 +20,7 @@ export class SessionConnection {
             }
             this.socket.onclose = (event) => {
                 this.sessionSubject.next({})
-                this.open()
+                setTimeout(() => this.open(), 1000)
             }
             this.socket.onerror = (event) => {
                 this.sessionSubject.next({})
