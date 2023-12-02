@@ -98,6 +98,10 @@ export class SessionConnection {
 
                     break
                 }
+                case 'participantKicked': {
+                    const room = session.rooms[event.roomId] =session.rooms[event.roomId] ?? new Room()
+                    delete room.participants?.[event.participantId]
+                }
             }
         }
 

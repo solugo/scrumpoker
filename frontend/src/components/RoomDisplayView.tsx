@@ -33,6 +33,10 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
         api?.resetRoom(roomId)
     }
 
+    function kickParticipant(participantId: string) {
+        api?.kickParticipant(roomId, participantId)
+    }
+
     let statTotal = 0
     const statValues: { [key: string]: number } = {}
 
@@ -64,6 +68,7 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
                                 selected={participant.selection !== null}
                                 title={participant.name || "🕶️"}
                                 value={participant.role === "SPECTATOR" ? "👁️" : (room.visible ? participant.selection : "")}
+                                onClickCancel={participantId !== props.participantId ? () => kickParticipant(participantId): undefined}
                             />
                         </div>
                     )
