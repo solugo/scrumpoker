@@ -40,4 +40,12 @@ export class SessionApi {
         })
     }
 
+    kickParticipant(roomId: string, participantId: string) {
+        this.connection?.send({
+            type: 'kickParticipant',
+            roomId: roomId,
+            participantId: participantId
+        })
+    }
+
 }

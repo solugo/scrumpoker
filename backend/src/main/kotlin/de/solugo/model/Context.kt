@@ -1,9 +1,6 @@
 package de.solugo.model
 
-import de.solugo.messages.event.ParticipantJoinedRoomEvent
-import de.solugo.messages.event.ParticipantLeftRoomEvent
-import de.solugo.messages.event.RoomInfoChangedEvent
-import de.solugo.messages.event.RoomSelectionChangedEvent
+import de.solugo.messages.event.*
 import de.solugo.sendEvent
 import io.ktor.websocket.*
 import io.micrometer.core.instrument.Metrics
@@ -220,6 +217,25 @@ class Context {
         }
     }
 
+    suspend fun kickParticipant(roomId: String, participantId: String, initiatorParticipantId: String) {
+        coroutineScope {
+            val room = rooms[roomId] ?: return@coroutineScope
+            val participant = room.members.remove(participantId) ?: return@coroutineScope
+            metrics.playerKickCounter.increment()
+            val participantKickEvent =
+                participant.toParticipantKickEvent(roomId, participantId, initiatorParticipantId)
+            participant.channel.sendEvent(participantKickEvent)
+            room.members.forEach{(memberId, member) ->
+                launch {
+                    member.channel.sendEvent(participantKickEvent)
+                }
+                launch {
+                    member.channel.sendEvent(room.toRoomSelectionChangedEvent(roomId, memberId))
+                }
+            }
+        }
+    }
+
     private fun Room.toRoomInfoUpdateEvent(roomId: String): RoomInfoChangedEvent {
         return RoomInfoChangedEvent(
             roomId = roomId,
@@ -258,6 +274,18 @@ class Context {
         return ParticipantLeftRoomEvent(
             roomId = roomId,
             participantId = participantId,
+        )
+    }
+
+    private fun Participant.toParticipantKickEvent(
+        roomId: String,
+        participantId: String,
+        initiatorParticipantId: String
+    ): ParticipantKickedEvent {
+        return ParticipantKickedEvent(
+            roomId = roomId,
+            participantId = participantId,
+            initiatorParticipantId = initiatorParticipantId
         )
     }
 

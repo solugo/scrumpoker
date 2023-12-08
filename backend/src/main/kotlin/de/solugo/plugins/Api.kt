@@ -69,10 +69,14 @@ fun Application.configureApi() {
                                         name = request.name,
                                         options = request.options,
                                     )
-
                                     is RevealRoomRequest -> context.revealRoom(
                                         roomId = request.roomId,
                                         visible = request.visible,
+                                    )
+                                    is KickParticipantRequest -> context.kickParticipant(
+                                        roomId = request.roomId,
+                                        participantId = request.participantId,
+                                        initiatorParticipantId = participantId
                                     )
 
                                 }

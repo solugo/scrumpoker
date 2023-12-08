@@ -1,6 +1,7 @@
-import React from "react";
-import {styled} from "@mui/material";
+import React, { useState } from "react";
+import {IconButton, styled} from "@mui/material";
 import classNames from "classnames";
+import { Cancel } from "@mui/icons-material";
 
 type GameCardType = "SELECT" | "VIEW" | "DISABLED"
 
@@ -11,6 +12,7 @@ interface GameCardProps {
     title?: string | undefined
     value?: string | null
     onClick?: () => void
+    onClickCancel?: () => void
 }
 
 const GameCard = (props: GameCardProps) => {
@@ -21,12 +23,19 @@ const GameCard = (props: GameCardProps) => {
         "card-selected": props.selected,
     })
 
+    const [showCancelButton, setShowCancelButton] = useState<'none' | 'block'>('none');
+
     return (
-        <div className={props.className}>
+        <div className={props.className} onMouseEnter={() => setShowCancelButton('block')} onMouseLeave={() => setShowCancelButton('none')}>
             <div className="title">
                 {props.title}
             </div>
             <div className={cardClasses} onClick={() => props.onClick?.()}>
+                {props.onClickCancel && 
+                    <IconButton className="cancel" aria-label="cancel" size="large" style={{display: showCancelButton}} onClick={() => props.onClickCancel?.()}>
+                        <Cancel />
+                    </IconButton>
+                }
                 <span>{props.value}</span>
             </div>
         </div>
@@ -77,6 +86,12 @@ export default styled(GameCard)((props) => (
             color: props.theme.palette.primary.contrastText,
             borderColor: props.theme.palette.secondary.main,
             backgroundColor: props.theme.palette.secondary.light,
+        },
+        ".cancel": {
+            position: "absolute",
+            top: "0",
+            left: "0",
+            padding: 0,
         },
     }
 ))

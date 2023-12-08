@@ -34,6 +34,12 @@ export interface ParticipantLeftRoomEvent {
     participantId: string
 }
 
+export interface ParticipantKicked {
+    type: 'participantKicked'
+    roomId: string
+    participantId: string
+}
+
 export interface ErrorEvent {
     type: 'error'
     message: string
@@ -46,3 +52,4 @@ export type SessionEvent =
     | ParticipantLeftRoomEvent
     | RoomInfoUpdatedEvent
     | RoomSelectionChangedEvent
+    | ParticipantKicked

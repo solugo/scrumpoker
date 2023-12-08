@@ -71,4 +71,9 @@ class ContextMetrics(
         tag("value", "select")
         register(registry)
     }
+    val playerKickCounter = Counter.builder("app.event").run {
+        tag("target", "player")
+        tag("value", "kick")
+        register(registry)
+    }
 }

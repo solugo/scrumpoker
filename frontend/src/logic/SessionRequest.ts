@@ -22,8 +22,15 @@ export interface UpdateSelectionRequest {
     selection: string | null
 }
 
+export interface KickParticipantRequest {
+    type: 'kickParticipant'
+    roomId: string
+    participantId: string
+}
+
 export type SessionRequest =
     | JoinRoomRequest
     | ResetRoomRequest
     | RevealRoomRequest
     | UpdateSelectionRequest
+    | KickParticipantRequest
