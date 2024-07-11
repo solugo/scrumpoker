@@ -32,14 +32,14 @@ jobs:
       - name: Publish Docker Image
         run: docker push ghcr.io/${{ github.repository }}:${{ env.VERSION }} && docker push ghcr.io/${{ github.repository }}:latest
       - name: Configure Kubernetes
-        run: mkdir ~/.kube && echo '${{ secrets.KUBECONFIG }}' > ~/.kube/config
+        run: mkdir ~/.kube && echo '${{ secrets.KUBE_CONFIG_TITAN_01 }}' > ~/.kube/config
       - name: Deploy to Kubernetes
         run: |
           helm package --app-version=${{ env.VERSION }} ./chart \
           && \
           helm upgrade -i scrumpoker ./scrumpoker-*.tgz \
           --set ingress.enabled=true \
-          --set ingress.domain=poker.solugo.de \
+          --set ingress.domain=vote.solugo.de \
           --set ingress.annotations."kubernetes\.io/ingress\.class"=public \
           --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
           ;
