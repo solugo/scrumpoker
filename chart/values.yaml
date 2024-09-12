@@ -9,7 +9,7 @@ resources:
     memory: 500Mi
 
 image:
-  repository: 'ghcr.io/solugo/scrumpoker'
+  repository: 'ghcr.io/solugo/scrumpoker/scrumpoker-docker'
 
 service:
   port: 80

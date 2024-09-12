@@ -1,8 +1,6 @@
 name: build
 
 on:
-  workflow_dispatch:
-    branches: [ main ]
   push:
     branches: [ main ]
     paths:
@@ -12,34 +10,159 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  packages: write
+
 jobs:
-  build:
+  version:
+    name: Calculate Version
     runs-on: ubuntu-20.04
+    outputs:
+      value: ${{ steps.calculate.outputs.version }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
+          fetch-tags: true
           fetch-depth: 0
-      - name: Calculate version
-        run: curl -Ls https://solugo.github.io/gitversion/run.sh | GITVERSION=v1.0.5 bash
-      - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      - name: Calculate
+        id: calculate
+        run: curl -Ls https://solugo.github.io/gitversion/run.sh | GITVERSION=v1.1.1 bash
+
+  frontend:
+    name: Build Frontend ${{ needs.version.outputs.value }}
+    runs-on: ubuntu-20.04
+    needs:
+      - version
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21
+      - name: Build
+        working-directory: frontend
+        run: |-
+          yarn install
+          yarn build
+      - name: Store
+        if: github.ref_name == 'main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'frontend'
+          path: 'frontend/dist/*'
+          retention-days: 1
+
+  backend:
+    name: Build Backend ${{ needs.version.outputs.value }}
+    runs-on: ubuntu-20.04
+    needs:
+      - version
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Build
+        working-directory: backend
+        run: |-
+          ./gradlew clean check bootJar -Pversion=${{ needs.version.outputs.value }}
+      - name: Store
+        if: github.ref_name == 'main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'backend'
+          path: 'backend/build/libs/backend.jar'
+          retention-days: 1
+
+  helm:
+    name: Build Helm Chart ${{ needs.version.outputs.value }}
+    runs-on: ubuntu-20.04
+    needs:
+      - version
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Package
+        run: |-
+          helm package chart \
+            -d build \
+            --version '${{ needs.version.outputs.value }}' \
+            --app-version '${{ needs.version.outputs.value }}' \
+          ;
+      - name: Store
+        if: github.ref_name == 'main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'helm'
+          path: 'build/*.tgz'
+          retention-days: 1
+
+  publish:
+    name: Publish ${{ needs.version.outputs.value }}
+    runs-on: ubuntu-20.04
+    if: github.ref_name == 'main'
+    needs:
+      - version
+      - backend
+      - frontend
+      - helm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build Docker Image
-        run: DOCKER_BUILDKIT=1 docker build --tag ghcr.io/${{ github.repository }}:${{ env.VERSION }} --tag ghcr.io/${{ github.repository }}:latest .
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          pattern: '*'
       - name: Publish Docker Image
-        run: docker push ghcr.io/${{ github.repository }}:${{ env.VERSION }} && docker push ghcr.io/${{ github.repository }}:latest
-      - name: Configure Kubernetes
-        run: mkdir ~/.kube && echo '${{ secrets.KUBE_CONFIG_TITAN_01 }}' > ~/.kube/config
-      - name: Deploy to Kubernetes
-        run: |
-          helm package --app-version=${{ env.VERSION }} ./chart \
-          && \
-          helm upgrade -i scrumpoker ./scrumpoker-*.tgz \
-          --set ingress.enabled=true \
-          --set ingress.domain=vote.solugo.de \
-          --set ingress.annotations."kubernetes\.io/ingress\.class"=public \
-          --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: |-
+            frontend=./artifacts/frontend
+            backend=./artifacts/backend/backend.jar
+          push: ${{ github.ref_name == 'main' }}
+          tags: ghcr.io/${{ github.repository }}/scrumpoker-docker:latest, ghcr.io/${{ github.repository }}/scrumpoker-docker:${{ needs.version.outputs.value }}
+      - name: Publish Helm Chart
+        run: |-
+          mv artifacts/helm/*.tgz artifacts/helm/helm.tgz
+          helm push \
+            artifacts/helm/helm.tgz \
+            oci://ghcr.io/${{ github.repository }} \
           ;
+
+  deploy:
+    name: Deploy ${{ needs.version.outputs.value }} to Titan
+    runs-on: ubuntu-20.04
+    if: github.ref_name == 'main'
+    needs:
+      - version
+      - publish
+    steps:
+      - name: Login
+        run: |-
+          mkdir ~/.kube
+          echo '${{ secrets.KUBE_CONFIG_TITAN_01 }}' > ~/.kube/config
+      - name: Deploy
+        run: |-
+          helm upgrade -i scrumpoker oci://ghcr.io/${{ github.repository }}/scrumpoker-helm \
+            --version ${{ needs.version.outputs.value }} \
+            --set ingress.enabled=true \
+            --set ingress.domain=poker.solugo.de \
+            --set ingress.annotations."kubernetes\.io/ingress\.class"=public \
+            --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+            --wait \
+          ;
+

@@ -1,13 +1,12 @@
 package de.solugo.model
 
-import assertk.assertThat
-import assertk.assertions.containsExactlyInAnyOrder
-import assertk.assertions.isEmpty
+import io.kotest.matchers.collections.beEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.should
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.*
 
@@ -26,8 +25,7 @@ class ContextTest {
 
     @Test
     @Order(1)
-    fun joinRoomParticipant1() {
-        runBlocking {
+    fun joinRoomParticipant1() = runTest {
             context.joinRoom(
                 roomId = roomId,
                 participantId = participant1Id,
@@ -35,143 +33,133 @@ class ContextTest {
                 name = "Player 1",
             )
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant1Id))
-                    put("name", JsonPrimitive("Player 1"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant1Id)
+                    put("name", "Player 1")
+                    put("role", "PLAYER")
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, JsonNull)
                     })
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomInfoChanged"))
-                    put("roomId", JsonPrimitive(roomId))
+                    put("type", "roomInfoChanged")
+                    put("roomId", roomId)
                     put("name", JsonNull)
                     put("options", buildJsonObject {
-                        put("½", JsonPrimitive(0.5))
-                        put("1", JsonPrimitive(1.0))
-                        put("2", JsonPrimitive(2.0))
-                        put("3", JsonPrimitive(3.0))
-                        put("5", JsonPrimitive(5.0))
-                        put("8", JsonPrimitive(8.0))
-                        put("13", JsonPrimitive(13.0))
-                        put("21", JsonPrimitive(21.0))
+                        put("½", 0.5)
+                        put("1", 1.0)
+                        put("2", 2.0)
+                        put("3", 3.0)
+                        put("5", 5.0)
+                        put("8", 8.0)
+                        put("13", 13.0)
+                        put("21", 21.0)
                         put("♾", JsonNull)
                         put("☕", JsonNull)
                         put("⚡", JsonNull)
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(3)
-    fun updateParticipant1Selection() {
-        runBlocking {
+    fun updateParticipant1Selection() = runTest {
             context.updateParticipantSelection(roomId, participant1Id, "½")
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
-                        put(participant1Id, JsonPrimitive("½"))
+                        put(participant1Id, "½")
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(4)
-    fun updateRoomWrongInfo() {
-        runBlocking {
+    fun updateRoomWrongInfo() = runTest {
             context.updateRoomInfo(roomId, name = "Wrong Room")
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomInfoChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("name", JsonPrimitive("Wrong Room"))
+                    put("type", "roomInfoChanged")
+                    put("roomId", roomId)
+                    put("name", "Wrong Room")
                     put("options", buildJsonObject {
-                        put("½", JsonPrimitive(0.5))
-                        put("1", JsonPrimitive(1.0))
-                        put("2", JsonPrimitive(2.0))
-                        put("3", JsonPrimitive(3.0))
-                        put("5", JsonPrimitive(5.0))
-                        put("8", JsonPrimitive(8.0))
-                        put("13", JsonPrimitive(13.0))
-                        put("21", JsonPrimitive(21.0))
+                        put("½", 0.5)
+                        put("1", 1.0)
+                        put("2", 2.0)
+                        put("3", 3.0)
+                        put("5", 5.0)
+                        put("8", 8.0)
+                        put("13", 13.0)
+                        put("21", 21.0)
                         put("♾", JsonNull)
                         put("☕", JsonNull)
                         put("⚡", JsonNull)
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(5)
-    fun updateRoomRightInfo() {
-        runBlocking {
+    fun updateRoomRightInfo() = runTest {
             context.updateRoomInfo(roomId, name = "Right Room", options = mapOf("1" to 1.0, "2" to 2.0))
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomInfoChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("name", JsonPrimitive("Right Room"))
+                    put("type", "roomInfoChanged")
+                    put("roomId", roomId)
+                    put("name", "Right Room")
                     put("options", buildJsonObject {
-                        put("1", JsonPrimitive(1.0))
-                        put("2", JsonPrimitive(2.0))
+                        put("1", 1.0)
+                        put("2", 2.0)
                     })
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, JsonNull)
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(6)
-    fun updateParticipant1SelectionAfterOptionChange() {
-        runBlocking {
+    fun updateParticipant1SelectionAfterOptionChange() = runTest {
             context.updateParticipantSelection(roomId, participant1Id, selection = "2")
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
-                        put(participant1Id, JsonPrimitive("2"))
+                        put(participant1Id, "2")
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(7)
-    fun joinRoomParticipant2() {
-        runBlocking {
+    fun joinRoomParticipant2() = runTest {
             context.joinRoom(
                 roomId = roomId,
                 participantId = participant2Id,
@@ -179,19 +167,19 @@ class ContextTest {
                 name = "Player 2",
             )
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant2Id))
-                    put("name", JsonPrimitive("Player 2"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant2Id)
+                    put("name", "Player 2")
+                    put("role", "PLAYER")
 
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "2")
                         put(participant2Id, JsonNull)
@@ -199,55 +187,53 @@ class ContextTest {
                 },
             )
 
-            assertThat(participant2Channel.purge()).containsExactlyInAnyOrder(
+            participant2Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant1Id))
-                    put("name", JsonPrimitive("Player 1"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant1Id)
+                    put("name", "Player 1")
+                    put("role", "PLAYER")
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant2Id))
-                    put("name", JsonPrimitive("Player 2"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant2Id)
+                    put("name", "Player 2")
+                    put("role", "PLAYER")
 
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "")
                         put(participant2Id, JsonNull)
                     })
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomInfoChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("name", JsonPrimitive("Right Room"))
+                    put("type", "roomInfoChanged")
+                    put("roomId", roomId)
+                    put("name", "Right Room")
                     put("options", buildJsonObject {
-                        put("1", JsonPrimitive(1.0))
-                        put("2", JsonPrimitive(2.0))
+                        put("1", 1.0)
+                        put("2", 2.0)
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(9)
-    fun updateParticipant2Selection() {
-        runBlocking {
+    fun updateParticipant2Selection() = runTest {
             context.updateParticipantSelection(roomId, participant2Id, "1")
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "2")
                         put(participant2Id, "")
@@ -255,24 +241,22 @@ class ContextTest {
                 },
             )
 
-            assertThat(participant2Channel.purge()).containsExactlyInAnyOrder(
+            participant2Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "")
                         put(participant2Id, "1")
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(10)
-    fun joinRoomParticipant3() {
-        runBlocking {
+    fun joinRoomParticipant3() = runTest {
             context.joinRoom(
                 roomId = roomId,
                 participantId = participant3Id,
@@ -280,19 +264,19 @@ class ContextTest {
                 name = "Player 3",
             )
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant3Id))
-                    put("name", JsonPrimitive("Player 3"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant3Id)
+                    put("name", "Player 3")
+                    put("role", "PLAYER")
 
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "2")
                         put(participant2Id, "")
@@ -301,19 +285,19 @@ class ContextTest {
                 },
             )
 
-            assertThat(participant2Channel.purge()).containsExactlyInAnyOrder(
+            participant2Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant3Id))
-                    put("name", JsonPrimitive("Player 3"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant3Id)
+                    put("name", "Player 3")
+                    put("role", "PLAYER")
 
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "")
                         put(participant2Id, "1")
@@ -322,33 +306,33 @@ class ContextTest {
                 },
             )
 
-            assertThat(participant3Channel.purge()).containsExactlyInAnyOrder(
+            participant3Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant1Id))
-                    put("name", JsonPrimitive("Player 1"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant1Id)
+                    put("name", "Player 1")
+                    put("role", "PLAYER")
 
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant2Id))
-                    put("name", JsonPrimitive("Player 2"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant2Id)
+                    put("name", "Player 2")
+                    put("role", "PLAYER")
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantJoinedRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant3Id))
-                    put("name", JsonPrimitive("Player 3"))
-                    put("role", JsonPrimitive("PLAYER"))
+                    put("type", "participantJoinedRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant3Id)
+                    put("name", "Player 3")
+                    put("role", "PLAYER")
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "")
                         put(participant2Id, "")
@@ -356,29 +340,27 @@ class ContextTest {
                     })
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomInfoChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("name", JsonPrimitive("Right Room"))
+                    put("type", "roomInfoChanged")
+                    put("roomId", roomId)
+                    put("name", "Right Room")
                     put("options", buildJsonObject {
-                        put("1", JsonPrimitive(1.0))
-                        put("2", JsonPrimitive(2.0))
+                        put("1", 1.0)
+                        put("2", 2.0)
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(11)
-    fun updateParticipant3Selection() {
-        runBlocking {
+    fun updateParticipant3Selection() = runTest {
             context.updateParticipantSelection(roomId, participant3Id, "1")
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "2")
                         put(participant2Id, "")
@@ -387,11 +369,11 @@ class ContextTest {
                 },
             )
 
-            assertThat(participant2Channel.purge()).containsExactlyInAnyOrder(
+            participant2Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "")
                         put(participant2Id, "1")
@@ -399,11 +381,11 @@ class ContextTest {
                     })
                 },
             )
-            assertThat(participant3Channel.purge()).containsExactlyInAnyOrder(
+            participant3Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant1Id, "")
                         put(participant2Id, "")
@@ -411,150 +393,141 @@ class ContextTest {
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(12)
-    fun leaveRoomParticipant1() {
-        runBlocking {
+    fun leaveRoomParticipant1() = runTest {
             context.leaveRoom(roomId, participant1Id)
 
-            assertThat(participant1Channel.purge()).containsExactlyInAnyOrder(
+            participant1Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantLeftRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant1Id))
+                    put("type", "participantLeftRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant1Id)
                 },
             )
 
-            assertThat(participant2Channel.purge()).containsExactlyInAnyOrder(
+            participant2Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantLeftRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant1Id))
+                    put("type", "participantLeftRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant1Id)
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant2Id, "1")
                         put(participant3Id, "")
                     })
                 },
             )
-            assertThat(participant3Channel.purge()).containsExactlyInAnyOrder(
+            participant3Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantLeftRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant1Id))
+                    put("type", "participantLeftRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant1Id)
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant2Id, "")
                         put(participant3Id, "1")
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(13)
-    fun revealRoom() {
-        runBlocking {
+    fun revealRoom() = runTest {
             context.revealRoom(roomId, true)
 
-            assertThat(participant1Channel.purge()).isEmpty()
+            participant1Channel.purge() should beEmpty()
 
-            assertThat(participant2Channel.purge()).containsExactlyInAnyOrder(
+            participant2Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(true))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", true)
                     put("selections", buildJsonObject {
                         put(participant2Id, "1")
                         put(participant3Id, "1")
                     })
                 },
             )
-            assertThat(participant3Channel.purge()).containsExactlyInAnyOrder(
+            participant3Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(true))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", true)
                     put("selections", buildJsonObject {
                         put(participant2Id, "1")
                         put(participant3Id, "1")
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(14)
-    fun resetRoom() {
-        runBlocking {
+    fun resetRoom() = runTest {
             context.resetRoom(roomId)
 
-            assertThat(participant1Channel.purge()).isEmpty()
+            participant1Channel.purge() should beEmpty()
 
-            assertThat(participant2Channel.purge()).containsExactlyInAnyOrder(
+            participant2Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant2Id, JsonNull)
                         put(participant3Id, JsonNull)
                     })
                 },
             )
-            assertThat(participant3Channel.purge()).containsExactlyInAnyOrder(
+            participant3Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant2Id, JsonNull)
                         put(participant3Id, JsonNull)
                     })
                 },
             )
-        }
     }
 
     @Test
     @Order(15)
-    fun leaveRoomParticipant2() {
-        runBlocking {
+    fun leaveRoomParticipant2() = runTest {
             participant2Channel.close()
             context.removeParticipant(participant2Id)
 
-            assertThat(participant1Channel.purge()).isEmpty()
-            assertThat(participant2Channel.purge()).isEmpty()
+            participant1Channel.purge() should beEmpty()
+            participant2Channel.purge() should beEmpty()
 
-            assertThat(participant3Channel.purge()).containsExactlyInAnyOrder(
+            participant3Channel.purge() shouldContainExactlyInAnyOrder listOf(
                 buildJsonObject {
-                    put("type", JsonPrimitive("participantLeftRoom"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("participantId", JsonPrimitive(participant2Id))
+                    put("type", "participantLeftRoom")
+                    put("roomId", roomId)
+                    put("participantId", participant2Id)
                 },
                 buildJsonObject {
-                    put("type", JsonPrimitive("roomSelectionChanged"))
-                    put("roomId", JsonPrimitive(roomId))
-                    put("visible", JsonPrimitive(false))
+                    put("type", "roomSelectionChanged")
+                    put("roomId", roomId)
+                    put("visible", false)
                     put("selections", buildJsonObject {
                         put(participant3Id, JsonNull)
                     })
                 },
             )
-        }
     }
 
     @BeforeEach
@@ -563,29 +536,6 @@ class ContextTest {
         participant2Channel.purge()
         participant3Channel.purge()
     }
-
-//            @Test
-//    @Order(2)
-//    fun lifecycle() {
-//
-//
-//        runBlocking {
-//
-//
-//
-//            participant2Channel.close()
-//            context.removeParticipant(participant2Id)
-//
-//            assertThat(participant1Channel.purge()).isEmpty()
-//
-//            assertThat(participant2Channel.purge()).isEmpty()
-//
-//            assertThat(participant3Channel.purge()).containsExactlyInAnyOrder(
-//                """{"type":"participantLeftRoom","roomId":"2c8ab43e-5daa-4b3f-9aec-dd573d228521","participantId":"a6b716b5-8545-45df-9377-ed682918747f"}""",
-//                """{"type":"roomSelectionChanged","roomId":"2c8ab43e-5daa-4b3f-9aec-dd573d228521","selections":{},"min":null,"max":null,"avg":null}""",
-//            )
-//        }
-//    }
 
     private fun ReceiveChannel<Frame>.purge() = buildList {
         while (true) {

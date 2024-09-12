@@ -1,6 +1,6 @@
 import {Card, styled} from "@mui/material";
 import {HTMLProps} from "react";
-import {Participant} from "../logic/Session";
+import {Participant} from "../logic/SessionState.ts";
 
 export interface ParticipantViewProps extends HTMLProps<HTMLElement> {
     id: string,

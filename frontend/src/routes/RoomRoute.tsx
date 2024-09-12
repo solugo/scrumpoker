@@ -1,25 +1,36 @@
-import React from "react";
 import {useParams} from "react-router-dom";
-import {useSession} from "../components/SessionScope";
 import RoomDisplayView from "../components/RoomDisplayView";
 import RoomJoinView from "../components/RoomJoinView";
+import {useSessionApi} from "../hooks/UseSessionApi.ts";
 
-const RoomRoute = () => {
+
+export default function RoomRoute() {
+
+    const api = useSessionApi()
+
     const {roomId} = useParams<{ roomId: string }>()
 
-    const session = useSession()
-    const room = roomId ? session?.rooms?.[roomId] : undefined
-    const participantId = session?.participantId
-    const participant = participantId ? room?.participants?.[participantId] : undefined
+    const room = api.state.rooms[roomId ?? ''] ?? undefined
+    const participantId = api.state.participantId
+    const participant = room?.participants?.[participantId ?? ''] ?? undefined
 
     if (roomId) {
         if (room && participantId && participant) {
             return (
-                <RoomDisplayView roomId={roomId} room={room} participantId={participantId} participant={participant}/>
+                <RoomDisplayView
+                    api={api}
+                    roomId={roomId}
+                    room={room}
+                    participantId={participantId}
+                    participant={participant}
+                />
             )
         } else {
             return (
-                <RoomJoinView roomId={roomId}/>
+                <RoomJoinView
+                    api={api}
+                    roomId={roomId}
+                />
             )
         }
     } else {
@@ -28,5 +39,3 @@ const RoomRoute = () => {
         )
     }
 }
-
-export default RoomRoute

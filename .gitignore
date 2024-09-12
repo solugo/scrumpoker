@@ -1,6 +1,8 @@
-/.gradle/*
-/backend/.idea/**
-/backend/.gradle/**
-/backend/build/*
-/frontend/build/*
-/frontend/node_modules/*
+.idea/*
+backend/.gradle/*
+backend/.kotlin/*
+backend/build/*
+
+frontend/node_modules
+frontend/dist
+frontend/*.tsbuildinfo

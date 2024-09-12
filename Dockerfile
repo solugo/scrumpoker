@@ -1,17 +1,10 @@
-FROM gradle:7.5.0-jdk18 AS backend
-COPY ./backend /content
-WORKDIR /content
-RUN gradle check shadowJar --no-daemon
+FROM amazoncorretto:21-alpine
+ARG frontend="./frontend/dist"
+ARG backend="./backend/build/libs/backend.jar"
 
-FROM node:18 AS frontend
-COPY ./frontend /content
-WORKDIR /content
-RUN npm install
-RUN npm run build
+WORKDIR /app
+COPY ${frontend} ./frontend
+COPY ${backend} ./backend.jar
+RUN ls -laR /app
 
-FROM openjdk:17-alpine
-COPY --from=backend /content/build/libs/*-all.jar /app/server.jar
-COPY --from=frontend /content/build /app/frontend
-
-WORKDIR "/app"
-ENTRYPOINT ["java", "-Djava.awt.headless=true", "-XX:MaxRAMPercentage=80", "-jar","server.jar"]
+ENTRYPOINT ["java", "-Djava.awt.headless=true", "-XX:MaxRAMPercentage=80", "-jar","backend.jar"]

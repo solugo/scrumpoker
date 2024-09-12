@@ -1,6 +1,7 @@
 package de.solugo.model
 
 import de.solugo.messages.event.*
+import de.solugo.plugins.MetricsRegistry
 import de.solugo.sendEvent
 import io.ktor.websocket.*
 import io.micrometer.core.instrument.Metrics
@@ -15,7 +16,6 @@ class Context {
     private val rooms = hashMapOf<String, Room>()
 
     private val metrics = ContextMetrics(
-        registry = Metrics.globalRegistry,
         roomCount = { rooms.size },
         playerCount = { rooms.values.sumOf { it.members.size } },
     )
@@ -34,7 +34,6 @@ class Context {
         channel: SendChannel<Frame>,
     ) {
         coroutineScope {
-
             val actualRoomId = roomId ?: UUID.randomUUID().toString()
             val room = rooms.computeIfAbsent(actualRoomId) {
                 metrics.roomCreateCounter.increment()

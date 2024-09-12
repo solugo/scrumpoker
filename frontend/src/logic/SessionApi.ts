@@ -1,51 +1,7 @@
-import {SessionConnection} from "./SessionConnection";
-import {SessionRequest} from "./SessionRequest";
+import {SessionState} from "./SessionState.ts";
+import {SessionRequest} from "./SessionRequest.ts";
 
-export class SessionApi {
-
-    private readonly requestQueue : SessionRequest[] = []
-
-    constructor(private connection: SessionConnection | undefined) {
-    }
-
-    joinRoom(name: string, mode: string, roomId?: string) {
-        this.connection?.send({
-            type: 'joinRoom',
-            roomId: roomId,
-            name: name,
-            role: mode,
-        })
-    }
-
-    resetRoom(roomId: string) {
-        this.connection?.send({
-            type: 'resetRoom',
-            roomId: roomId,
-        })
-    }
-
-    revealRoom(roomId: string, visible: boolean = true) {
-        this.connection?.send({
-            type: 'revealRoom',
-            roomId: roomId,
-            visible: visible,
-        })
-    }
-
-    changeSelection(roomId: string, selection: string | null) {
-        this.connection?.send({
-            type: 'updateSelection',
-            roomId: roomId,
-            selection: selection,
-        })
-    }
-
-    kickParticipant(roomId: string, participantId: string) {
-        this.connection?.send({
-            type: 'kickParticipant',
-            roomId: roomId,
-            participantId: participantId
-        })
-    }
-
+export type SessionApi = {
+    readonly state: SessionState,
+    readonly send: (event: SessionRequest) => void,
 }

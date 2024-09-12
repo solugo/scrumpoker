@@ -15,9 +15,6 @@ export interface RoomSelectionChangedEvent {
     roomId: string
     visible: boolean
     selections: { [key: string]: string | null }
-    avg: number | null
-    min: number | null
-    max: number | null
 }
 
 export interface ParticipantJoinedRoomEvent {

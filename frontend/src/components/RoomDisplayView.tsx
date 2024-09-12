@@ -1,10 +1,10 @@
-import React from "react";
-import {Participant, Room} from "../logic/Session";
+import {Participant, Room} from "../logic/SessionState.ts";
 import GameCard from "./GameCard";
 import {Button, styled} from "@mui/material";
-import {useSessionApi} from "./SessionScope";
+import {SessionApi} from "../logic/SessionApi.ts";
 
 interface RoomDisplayViewProps {
+    api: SessionApi,
     participantId: string
     participant: Participant
     roomId: string
@@ -13,8 +13,6 @@ interface RoomDisplayViewProps {
 }
 
 const RoomDisplayView = (props: RoomDisplayViewProps) => {
-    const api = useSessionApi()
-
     const roomId = props.roomId
     const room = props.room
     const participants = room.participants
@@ -22,40 +20,69 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
     const options = Object.entries(props.room?.options ?? {}).sort((a, b) => a[1] - b[1])
 
     function updateSelection(value: string) {
-        api?.changeSelection(roomId, props.participant.selection !== value ? value : null)
+        props.api.send({
+            type: 'updateSelection',
+            selection: props.participant.selection !== value ? value : null,
+            roomId,
+        })
     }
 
     function reveal() {
-        api?.revealRoom(roomId, !room.visible)
+        props.api.send({
+            type: 'revealRoom',
+            visible: !room.visible,
+            roomId,
+        })
     }
 
     function restart() {
-        api?.resetRoom(roomId)
+        props.api.send({
+            type: 'resetRoom',
+            roomId,
+        })
     }
 
     function kickParticipant(participantId: string) {
-        api?.kickParticipant(roomId, participantId)
+        props.api.send({
+            type: 'kickParticipant',
+            roomId,
+            participantId,
+        })
     }
 
-    let statTotal = 0
-    const statValues: { [key: string]: number } = {}
+    const selectionValues: { [key: string]: number } = {}
+    const selectionIncidence: { [key: string]: number } = {}
+
+    let selectionSum = 0
+    let selectionCount = 0
+    const incidents: { selection: string, value: number }[] = []
 
     if (room.visible) {
-        Object.values(participants).forEach((participant) => {
-            if (participant.selection) {
-                statTotal += 1
-            }
+        options.forEach(([selection, value]) => {
+            selectionValues[selection] = value
         })
-
         Object.values(participants).forEach((participant) => {
-            if (participant.selection) {
-                const selection = participant.selection || ""
-                statValues[selection] = (statValues[selection] || 0) + 1
+            const selection = participant.selection
+            const value = selectionValues[selection ?? ""]
+            if (selection) {
+                selectionIncidence[selection] = (selectionIncidence[selection] ?? 0) + 1
+            }
+            if (selection && value) {
+                selectionCount += 1
+                selectionSum += value
+                incidents.push({selection, value})
             }
         })
     }
 
-    const statEntries = Object.entries(statValues).sort((a, b) => b[1] - a[1])
+    const selectionIncidentEntries = Object.entries(selectionIncidence).sort((a, b) => b[1] - a[1])
+    const selectionValueEntries = incidents.sort((a, b) => a.value - b.value)
+
+    const valueMin = selectionCount === 0 ? 0 : (selectionValueEntries[0]?.value ?? 0)
+    const valueMax = selectionCount === 0 ? 0 : (selectionValueEntries[selectionValueEntries.length - 1]?.value ?? 0)
+    const valueAvg = selectionCount === 0 ? 0 : (Math.round(100 * selectionSum / selectionCount) / 100)
+    const valueMed = selectionCount === 0 ? 0 : (selectionValueEntries[Math.floor(selectionValueEntries.length / 2)]?.value ?? 0)
+    const valueDev = selectionCount === 0 ? 0 : (valueMax - valueMin)
 
     return (
         <div className={props.className}>
@@ -68,26 +95,55 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
                                 selected={participant.selection !== null}
                                 title={participant.name || "🕶️"}
                                 value={participant.role === "SPECTATOR" ? "👁️" : (room.visible ? participant.selection : "")}
-                                onClickCancel={participantId !== props.participantId ? () => kickParticipant(participantId): undefined}
+                                onClickCancel={participantId !== props.participantId ? () => kickParticipant(participantId) : undefined}
                             />
                         </div>
                     )
                 )}
             </div>
             <div className="statsList">
-                {statEntries.map(
-                    ([title, statValue]) => {
-                        const percentage = 100.0 * statValue / statTotal
-                        return (
-                            <div key={title} className="statContainer">
-                                <div className="statEntry" key={title}>
-                                    <div className="statSpace" style={{height: `${100 - percentage}%`}}></div>
-                                </div>
-                                <div className="statNumber">{title}</div>
-                            </div>
-                        )
-                    }
+                {!room.visible ? null : (
+                    <>
+                        {selectionIncidentEntries.map(
+                            ([title, count]) => {
+                                const percentage = 100.0 * count / selectionCount
+                                return (
+                                    <div key={title} className="statContainer">
+                                        <div className="statEntry">
+                                            <div className="statSpace" style={{height: `${100 - percentage}%`}}></div>
+                                        </div>
+                                        <div className="statNumber">{title}</div>
+                                    </div>
+                                )
+                            }
+                        )}
+                    </>
                 )}
+            </div>
+            <div className="statsDetails">
+                {!room.visible ? null : (
+                    valueDev === 0 ? (
+                        <>
+                            <div className="statsDetailLabel" style={{gridColumn: 1}}>RESULT</div>
+                            <div className="statsDetailValue" style={{gridColumn: 1}}>AGREEMENT</div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="statsDetailLabel" style={{gridColumn: 1}}>MIN
+                            </div>
+                            <div className="statsDetailValue" style={{gridColumn: 1}}>{valueMin}</div>
+                            <div className="statsDetailLabel" style={{gridColumn: 2}}>AVG</div>
+                            <div className="statsDetailValue" style={{gridColumn: 2}}>{valueAvg}</div>
+                            <div className="statsDetailLabel" style={{gridColumn: 3}}>DEV</div>
+                            <div className="statsDetailValue" style={{gridColumn: 3}}>{valueDev}</div>
+                            <div className="statsDetailLabel" style={{gridColumn: 4}}>MED</div>
+                            <div className="statsDetailValue" style={{gridColumn: 4}}>{valueMed}</div>
+                            <div className="statsDetailLabel" style={{gridColumn: 5}}>MAX</div>
+                            <div className="statsDetailValue" style={{gridColumn: 5}}>{valueMax}</div>
+                        </>
+                    )
+                )}
+
             </div>
             <div className="actionList">
                 <Button color="success" variant="contained" className="action" onClick={reveal}>
@@ -97,7 +153,7 @@ const RoomDisplayView = (props: RoomDisplayViewProps) => {
             </div>
             <div className="optionList">
                 {options.map(
-                    ([selection, value]) => {
+                    ([selection]) => {
                         return (
                             <div className="option" key={selection}>
                                 <GameCard
@@ -160,6 +216,25 @@ export default styled(RoomDisplayView)((props) => (
             justifyContent: "center",
             alignItems: "stretch",
         },
+        ".statsDetails": {
+            display: "grid",
+            gridTemplateRows: 'auto',
+            columnGap: "1rem",
+            height: "auto",
+            margin: "auto",
+            justifyItems: "center",
+            alignItems: "center",
+        },
+        ".statsDetailLabel": {
+            gridRow: 1,
+            userSelect: "none",
+            fontSize: "75%",
+            color: props.theme.palette.secondary.dark,
+        },
+        ".statsDetailValue": {
+            gridRow: 2,
+            fontWeight: "bold",
+        },
         ".statEntry": {
             aspectRatio: "2 / 4",
             border: "solid 1px",
@@ -169,10 +244,12 @@ export default styled(RoomDisplayView)((props) => (
         },
         ".statSpace": {
             marginTop: "auto",
+            textAlign: "center",
             backgroundColor: props.theme.palette.background.default,
         },
         ".statNumber": {
             paddingTop: "0.5rem",
+            fontWeight: "bold",
             textAlign: "center",
         },
     }

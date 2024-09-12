@@ -1,6 +1,5 @@
 import {Observable} from "rxjs";
 import {useEffect, useState} from "react";
-import {randomInt} from "crypto";
 
 export function useObservable<T>(observable: Observable<T> | undefined): T | undefined {
     const [state, setState] = useState<T | undefined>(undefined)
@@ -10,7 +9,7 @@ export function useObservable<T>(observable: Observable<T> | undefined): T | und
             const subscription = observable.subscribe((value) => setState(value))
             return subscription.unsubscribe.bind(subscription)
         }
-    }, [])
+    }, [observable])
 
     return state
 }

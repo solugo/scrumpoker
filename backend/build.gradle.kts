@@ -1,52 +1,53 @@
-val ktor_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-val prometeus_version: String by project
-val serialization_version: String by project
-val assertk_version: String by project
-val junit_version: String by project
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.7.10"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
-    id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("application")
+    id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
+    id("org.springframework.boot") version "3.3.3"
 }
 
-group = "de.solugo"
-
-application {
-    mainClass.set("ScrumPoker")
-
-    val isDevelopment: Boolean = project.ext.has("development")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
-}
+group = "de.solugo.scrumpoker"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version")
-    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-host-common-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-call-logging-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-call-id-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-metrics-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-metrics-micrometer-jvm:$ktor_version")
-    implementation("io.micrometer:micrometer-registry-prometheus:$prometeus_version")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-websockets-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-cio-jvm:$ktor_version")
-    implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("org.junit.jupiter:junit-jupiter:$junit_version")
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.7.2"))
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.8.1"))
+    implementation(platform("io.ktor:ktor-bom:2.3.12"))
+    implementation(platform("io.micrometer:micrometer-bom:1.13.4"))
+    implementation(platform("org.junit:junit-bom:5.11.0"))
+    implementation(platform("io.kotest:kotest-bom:5.9.1"))
 
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
-    testImplementation("com.willowtreeapps.assertk:assertk:$assertk_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
+    implementation("io.ktor:ktor-server-cio")
+    implementation("io.ktor:ktor-server-websockets")
+    implementation("io.ktor:ktor-server-content-negotiation")
+    implementation("io.ktor:ktor-server-metrics-micrometer")
+    implementation("io.ktor:ktor-serialization-kotlinx-json")
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("ch.qos.logback:logback-classic:1.5.8")
+
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("io.ktor:ktor-server-tests")
+    testImplementation("io.kotest:kotest-assertions-core-jvm")
+}
+
+
+kotlin {
+    jvmToolchain(21)
+}
+
+springBoot {
+    buildInfo()
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.withType<BootJar>{
+    archiveFileName = "backend.jar"
 }

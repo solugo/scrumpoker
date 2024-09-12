@@ -1,17 +1,26 @@
-import React, {HTMLProps} from 'react';
-import {Route, Routes, useNavigate} from "react-router-dom";
-import {useSession} from "./SessionScope";
-import {Box, IconButton, styled, Toolbar, Typography} from "@mui/material";
-import IndexRoute from "../routes/IndexRoute";
+import {HTMLProps, useEffect, useState} from 'react';
+import {Navigate, Route, Routes} from "react-router-dom";
+import {Box, IconButton, styled, Toolbar, Tooltip, Typography} from "@mui/material";
 import RoomRoute from "../routes/RoomRoute";
 import {v4 as uuid} from 'uuid';
-import {Add} from "@mui/icons-material";
+import Feedback from "../icons/Feedback";
+
+
 
 const App = (props: HTMLProps<HTMLElement>) => {
-    const navigate = useNavigate()
 
-    function addRoom() {
-        navigate(`/rooms/${uuid()}`, {})
+    const [version, setVersion] = useState('');
+
+    async function loadVersionInfo() {
+        const response = await fetch("/api/version")
+        const info = await response.json()
+        setVersion(info['build.version'] ?? '')
+    }
+
+    useEffect(() => void loadVersionInfo(), [])
+
+    function feedback() {
+        window.open("https://github.com/solugo/scrumpoker/issues")
     }
 
     return (
@@ -20,13 +29,19 @@ const App = (props: HTMLProps<HTMLElement>) => {
                 <Typography variant="h6" component="div">
                     Scrum Poker
                 </Typography>
-
+                <Typography className="version" variant="h6" component="div">
+                    {version}
+                </Typography>
                 <Box sx={{flexGrow: 1}}/>
-                <IconButton onClick={addRoom} color="inherit"> <Add/> </IconButton>
+                <Tooltip title="Feedback">
+                    <IconButton onClick={feedback} color="inherit">
+                        <Feedback/>
+                    </IconButton>
+                </Tooltip>
             </Toolbar>
             <div className="content">
                 <Routes>
-                    <Route path="/" element={<IndexRoute/>}/>
+                    <Route path="/" element={<Navigate to={`/rooms/${uuid()}`}/>}/>
                     <Route path="/rooms/:roomId" element={<RoomRoute/>}/>
                 </Routes>
             </div>
@@ -50,10 +65,13 @@ export default styled(App)(
                 backgroundColor: '#EEE',
             },
             '.room': {
-
                 color: props.theme.palette.text.primary,
                 backgroundColor: props.theme.palette.background.default,
-            }
+            },
+            '.version': {
+                paddingLeft: '1rem',
+                color: props.theme.palette.primary.dark,
+            },
         }
     )
 )

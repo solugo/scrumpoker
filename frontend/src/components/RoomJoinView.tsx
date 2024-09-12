@@ -1,22 +1,28 @@
-import {Button, Card, FormControl, InputLabel, MenuItem, Select, styled, TextField} from "@mui/material";
-import React, {HTMLProps, useState} from "react";
-import {useSessionApi} from "./SessionScope";
-import {Room} from "../logic/Session";
-import SelectInput from "@mui/material/Select/SelectInput";
+import {Button, MenuItem, styled, TextField} from "@mui/material";
+import {FormEvent} from "react";
+import {useStoredState} from "../hooks/UseStoredState";
+import {SessionApi} from "../logic/SessionApi.ts";
 
 interface RoomJoinViewProps {
+    api: SessionApi,
     roomId: string
     className?: string
 }
 
 export default styled(
     (props: RoomJoinViewProps) => {
-        const api = useSessionApi()
-        const [name, setName] = useState<string>("")
-        const [role, setRole] = useState<string>("PLAYER")
+        const [name, setName] = useStoredState<string>("player_name", "")
+        const [role, setRole] = useStoredState<string>("player_role", "PLAYER")
+        const roomId = props.roomId
 
-        function submit() {
-            api?.joinRoom(name, role, props.roomId)
+        function submit(event: FormEvent) {
+            props.api.send({
+                type: 'joinRoom',
+                name,
+                role,
+                roomId,
+            })
+            event.preventDefault()
             return false
         }
 
