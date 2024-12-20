@@ -31,7 +31,6 @@ dependencies {
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("io.ktor:ktor-server-tests")
     testImplementation("io.kotest:kotest-assertions-core-jvm")
 }
 

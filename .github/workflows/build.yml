@@ -16,7 +16,7 @@ permissions:
 jobs:
   version:
     name: Calculate Version
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     outputs:
       value: ${{ steps.calculate.outputs.version }}
     steps:
@@ -31,7 +31,7 @@ jobs:
 
   frontend:
     name: Build Frontend ${{ needs.version.outputs.value }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       - version
     steps:
@@ -40,7 +40,7 @@ jobs:
       - name: Setup
         uses: actions/setup-node@v4
         with:
-          node-version: 21
+          node-version: 22
       - name: Build
         working-directory: frontend
         run: |-
@@ -56,7 +56,7 @@ jobs:
 
   backend:
     name: Build Backend ${{ needs.version.outputs.value }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       - version
     steps:
@@ -82,7 +82,7 @@ jobs:
 
   helm:
     name: Build Helm Chart ${{ needs.version.outputs.value }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       - version
     steps:
@@ -105,7 +105,7 @@ jobs:
 
   publish:
     name: Publish ${{ needs.version.outputs.value }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     if: github.ref_name == 'main'
     needs:
       - version
@@ -145,7 +145,7 @@ jobs:
 
   deploy:
     name: Deploy ${{ needs.version.outputs.value }} to Titan
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     if: github.ref_name == 'main'
     needs:
       - version

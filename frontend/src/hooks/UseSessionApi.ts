@@ -13,12 +13,10 @@ export function useSessionApi(): SessionApi {
     const {lastMessage, sendMessage, readyState} = useWebSocket(url, {shouldReconnect: () => true, retryOnError: true})
 
     useEffect(() => {
-        console.log('state changed', readyState)
         if (readyState === ReadyState.OPEN) updateHolder([new SessionState()])
     }, [updateHolder, readyState]);
 
     useEffect(() => {
-        console.log('message', lastMessage)
         if (lastMessage) updateHolder(prev => {
             const event: SessionEvent = JSON.parse(lastMessage.data.toString())
             const [state] = prev
