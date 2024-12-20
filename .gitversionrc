@@ -1,0 +1,3 @@
+major_pattern=[a-z]+!:.+
+minor_pattern=feat:.+
+patch_pattern=.*
