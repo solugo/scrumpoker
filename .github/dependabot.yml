@@ -3,13 +3,14 @@ updates:
   # Maintain dependencies for backend
   - package-ecosystem: "gradle"
     directory: "backend/"
+    target-branch: "main"
     schedule:
       interval: "weekly"
     commit-message:
-      prefix: "chore(deps):"
+      prefix: "chore:"
     groups:
       main:
-        applies-to: "version-updates"
+        applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
@@ -23,10 +24,27 @@ updates:
     schedule:
       interval: "weekly"
     commit-message:
-      prefix: "chore(deps):"
+      prefix: "chore:"
     groups:
       main:
-        applies-to: "version-updates"
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+
+  # Maintain dependencies for docker images
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "main"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore:"
+    groups:
+      main:
+        applies-to: version-updates
         update-types:
           - "minor"
           - "patch"

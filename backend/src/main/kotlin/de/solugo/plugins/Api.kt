@@ -14,8 +14,8 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.supervisorScope
 import org.slf4j.LoggerFactory
-import java.time.Duration
 import java.util.Properties
+import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureApi() {
 
@@ -28,8 +28,8 @@ fun Application.configureApi() {
     }
 
     install(WebSockets) {
-        pingPeriod = Duration.ofSeconds(1)
-        timeout = Duration.ofSeconds(1)
+        pingPeriod = 1.seconds
+        timeout = 1.seconds
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
