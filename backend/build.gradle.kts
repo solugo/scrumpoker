@@ -15,7 +15,7 @@ repositories {
 dependencies {
     implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.7.2"))
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.8.1"))
-    implementation(platform("io.ktor:ktor-bom:2.3.12"))
+    implementation(platform("io.ktor:ktor-bom:3.0.3"))
     implementation(platform("io.micrometer:micrometer-bom:1.13.4"))
     implementation(platform("org.junit:junit-bom:5.11.0"))
     implementation(platform("io.kotest:kotest-bom:5.9.1"))
