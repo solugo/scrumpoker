@@ -17,5 +17,6 @@ service:
 ingress:
   enabled: false
   
-metrics:
-  enabled: true
+serviceMonitor:
+  enabled: false
+  namespace: null

@@ -1,8 +1,9 @@
-{{- if .Values.metrics.enabled -}}
+{{- if .Values.serviceMonitor.enabled -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "chart.fullname" . }}-servicemonitor
+  namespace: {{ $.Values.serviceMonitor.namespace | default $.Release.Namespace }}
   labels:
     {{- include "chart.labels" . | nindent 4}}
 spec:
