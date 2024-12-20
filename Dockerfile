@@ -1,4 +1,4 @@
-FROM amazoncorretto:21-alpine
+FROM amazoncorretto:23-alpine
 ARG frontend="./frontend/dist"
 ARG backend="./backend/build/libs/backend.jar"
 
