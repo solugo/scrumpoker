@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.7.3"))
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.0"))
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.1"))
     implementation(platform("io.ktor:ktor-bom:3.0.3"))
     implementation(platform("io.micrometer:micrometer-bom:1.14.2"))
     implementation(platform("org.junit:junit-bom:5.11.4"))
@@ -27,7 +27,7 @@ dependencies {
     implementation("io.ktor:ktor-server-metrics-micrometer")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation("ch.qos.logback:logback-classic:1.5.14")
+    implementation("ch.qos.logback:logback-classic:1.5.15")
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.junit.jupiter:junit-jupiter")
