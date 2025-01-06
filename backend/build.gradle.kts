@@ -27,7 +27,7 @@ dependencies {
     implementation("io.ktor:ktor-server-metrics-micrometer")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation("ch.qos.logback:logback-classic:1.5.15")
+    implementation("ch.qos.logback:logback-classic:1.5.16")
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.junit.jupiter:junit-jupiter")
