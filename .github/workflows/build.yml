@@ -154,14 +154,13 @@ jobs:
       - name: Login
         run: |-
           mkdir ~/.kube
-          echo '${{ secrets.KUBE_CONFIG_TITAN_01 }}' > ~/.kube/config
+          echo '${{ secrets.KUBE_CONFIG_HYPERION }}' > ~/.kube/config
       - name: Deploy
         run: |-
           helm upgrade -i scrumpoker oci://ghcr.io/${{ github.repository }}/scrumpoker-helm \
             --version ${{ needs.version.outputs.value }} \
             --set ingress.enabled=true \
-            --set ingress.domain=poker.solugo.de \
-            --set ingress.annotations."kubernetes\.io/ingress\.class"=public \
+            --set ingress.domain=poker.int.solugo.dev \
             --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
             --set serviceMonitor.enabled=true \
             --set serviceMonitor.namespace=observability \
