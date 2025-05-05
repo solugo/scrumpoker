@@ -144,7 +144,7 @@ jobs:
           ;
 
   deploy:
-    name: Deploy ${{ needs.version.outputs.value }} to Titan
+    name: Deploy ${{ needs.version.outputs.value }} to Integration
     runs-on: ubuntu-24.04
     if: github.ref_name == 'main'
     needs:
@@ -159,6 +159,7 @@ jobs:
         run: |-
           helm upgrade -i scrumpoker oci://ghcr.io/${{ github.repository }}/scrumpoker-helm \
             --version ${{ needs.version.outputs.value }} \
+            --namespace integration \
             --set ingress.enabled=true \
             --set ingress.domain=poker.int.solugo.dev \
             --set ingress.annotations."kubernetes\.io/ingress\.class"=nginx \
