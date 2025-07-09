@@ -1,16 +1,8 @@
 @file:JvmName("ScrumPoker")
 
-import de.solugo.plugins.*
-import io.ktor.server.cio.*
-import io.ktor.server.engine.*
+import de.solugo.scrumpoker.Application
+import org.springframework.boot.runApplication
 
-fun main() {
-    embeddedServer(CIO, port = 8080, host = "0.0.0.0") {
-        configureBase()
-        configureMetrics()
-        configureApi()
-        configureUi()
-    }.start(
-        wait = true,
-    )
+fun main(args: Array<String>) {
+    runApplication<Application>(*args)
 }
