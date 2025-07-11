@@ -5,6 +5,8 @@
       <module fileurl="file://$PROJECT_DIR$/backend.iml" filepath="$PROJECT_DIR$/backend.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/backend.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/de.solugo.scrumpoker.backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/de.solugo.scrumpoker.backend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/de.solugo.scrumpoker.backend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/de.solugo.scrumpoker.backend.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/frontend.iml" filepath="$PROJECT_DIR$/frontend.iml" />
       <module fileurl="file://$PROJECT_DIR$/scrumpoker.iml" filepath="$PROJECT_DIR$/scrumpoker.iml" />
     </modules>

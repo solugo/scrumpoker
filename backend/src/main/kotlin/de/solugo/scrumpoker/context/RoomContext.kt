@@ -1,118 +1,193 @@
 package de.solugo.scrumpoker.context
 
-import de.solugo.scrumpoker.ApplicationProperties
 import de.solugo.scrumpoker.model.Action
 import de.solugo.scrumpoker.model.Event
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import de.solugo.scrumpoker.model.Player
+import de.solugo.scrumpoker.model.Room
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.openapitools.jackson.nullable.JsonNullable
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KProperty
 
 @Component
-class RoomContext(
-    scope: CoroutineScope,
-    properties: ApplicationProperties,
-) {
-
+class RoomContext {
     private val mutex = Mutex()
-    private val rooms = hashMapOf<String, Room>()
+    private val sessions = hashMapOf<String, RoomSession>()
 
-    init {
-        scope.launch {
-            while (isActive) {
-                delay(properties.room.cleanupInterval.toMillis())
-                mutex.withLock {
-                    rooms.keys.removeAll(
-                        rooms.mapNotNull { (id, room) -> id.takeIf { room.isEmpty() } }
-                    )
-                }
-            }
-        }
+    suspend fun session(roomId: String) = mutex.withLock {
+        sessions.computeIfAbsent(roomId) { RoomSession() }
     }
 
-    fun getRoom(id: String) = rooms.computeIfAbsent(id, ::Room)
-
-    inner class Room(
-        val id: String,
+    class RoomSession(
+        val room: Room = Room(),
     ) {
+        private val playerSend = hashMapOf<String, suspend (Event) -> Unit>()
         private val mutex = Mutex()
-        private val players = hashMapOf<String, Player>()
 
-        suspend fun addPlayer(id: String, send: suspend (Event) -> Unit) = mutex.withLock {
-            players.computeIfAbsent(id, ::Player).also {
-                it.send = send
-                players.send(Event.PlayerJoined(id))
+        suspend fun join(playerId: String, send: suspend (Event) -> Unit) = mutex.withLock {
+            playerSend[playerId] = send
+            room.players.computeIfAbsent(playerId) { Player() }.apply {
+                state = Player.State.CONNECTED
             }
         }
 
-        suspend fun removePlayer(id: String) = mutex.withLock {
-            players.remove(id)?.also {
-                players.send(Event.PlayerLeft(id))
-            }
+        suspend fun leave(playerId: String) = mutex.withLock {
+            room.players.remove(playerId)
+            playerSend.remove(playerId)
         }
 
-        suspend fun isEmpty() = mutex.withLock {
-            players.isEmpty()
-        }
-
-        inner class Player(
-            val id: String,
-        ) {
-            var send: suspend (Event) -> Unit = {}
-            var name: String? = null
-            var participate: Boolean = true
-            var selection: String? = null
-
-            suspend fun process(action: Action) {
-                println("Got action $action")
-                var publishInfo = false
-                when (action) {
-                    is Action.UpdatePlayerInfo -> {
-                        action.name.applyTo(::name) {
-                            publishInfo = true
-                        }
-                        action.participate.applyTo(::participate) {
-                            publishInfo = true
-                        }
-                        action.selection.applyTo(::selection) {
-                            publishInfo = true
-                        }
+        suspend fun process(playerId: String, action: Action) = mutex.withLock {
+            val modified = hashSetOf<KProperty<*>>()
+            when (action) {
+                is Action.UpdatePlayerInfo -> {
+                    room.players[playerId]?.also { player ->
+                        player::name.set(action.name, modified)
+                        player::participate.set(action.participate, modified)
+                        player::selection.set(action.selection, modified)
                     }
                 }
+            }
 
-                if (publishInfo) {
-                    players.send(
-                        Event.PlayerInfoUpdated(
+            generateEvents(modified).forEach { event ->
+                playerSend.values.forEach {
+                    runCatching {
+                        it(event)
+                    }.onFailure {
+                        logger.error("Failed to process event $event", it)
+                    }
+                }
+            }
+        }
+
+        private fun generateEvents(modified: Set<KProperty<*>>? = null) = buildList {
+            val force = modified == null
+            var recalc = force
+
+            room.players.forEach { (id, player) ->
+                modified.changes(player::name, player::participate, player::selection) {
+                    add(
+                        Event.PlayerUpdated(
                             id = id,
-                            name = name,
-                            participate = participate,
-                            selection = selection,
+                            name = jsonNullable(player::name),
+                            participate = jsonNullable(player::participate),
+                            selected = jsonNullable(player::selection).letPresent { it != null },
                         )
                     )
                 }
+                modified.changes(player::participate, player::selection) {
+                    recalc = true
+                }
+            }
 
+            modified.changes(room::name) {
+                add(
+                    Event.RoomUpdated(
+                        name = jsonNullable(room::name),
+                        visible = jsonNullable(room::visible),
+                    )
+                )
+            }
+
+            modified.changes(force, room::visible) {
+                recalc = true
+            }
+
+            if (recalc) {
+                add(
+                    when {
+                        room.visible -> {
+                            val playerSelections = buildMap {
+                                room.players.forEach { (id, player) ->
+                                    player.selection?.also { put(id, it) }
+                                }
+                            }
+                            val playerValues = buildMap {
+                                room.players.forEach { (id, player) ->
+                                    room.options[player.selection]?.also { put(id, it) }
+                                }
+                            }
+
+                            val values = playerValues.values.sorted()
+
+                            val valuePlayers = playerValues.entries.groupBy(
+                                keySelector = { it.value },
+                                valueTransform = { it.key },
+                            )
+
+                            val min = values.firstOrNull()
+                            val max = values.lastOrNull()
+                            val median = values.getOrNull(values.size / 2)
+                            val average = values.average().takeUnless { it.isNaN() }
+                            val distance = ((max ?: 0) - (min ?: 0)).takeUnless { values.isEmpty() }
+                            val playerLow = valuePlayers[min]?.random()
+                            val playerHigh = valuePlayers[max]?.random()
+
+                            Event.ResultUpdated(
+                                selections = playerSelections,
+                                statistics = Event.ResultUpdated.Statistics(
+                                    min = min,
+                                    max = max,
+                                    average = average,
+                                    median = median,
+                                ),
+                                discussion = Event.ResultUpdated.Discussion(
+                                    distance = distance,
+                                    playerLow = playerLow,
+                                    playerHigh = playerHigh,
+                                )
+                            )
+                        }
+
+                        else -> Event.ResultUpdated(
+                            selections = null,
+                            statistics = null,
+                        )
+                    }
+                )
             }
         }
+
     }
 
-    suspend fun Map<String, Room.Player>.send(event: Event) {
-        values.forEach {
-            it.send(event)
-        }
-    }
-
-    fun <T> JsonNullable<T>.applyTo(property: KMutableProperty<T>, onChange: (T?) -> Unit = {}) {
-        ifPresent { update ->
-            val current = property.getter.call()
-            if (current != update) {
-                property.setter.call(update)
-                onChange(update)
+    companion object {
+        private val logger = LoggerFactory.getLogger(RoomContext::class.java)
+        private inline fun <T, R> Collection<T>?.changes(
+            vararg values: T,
+            block: Set<T>.() -> R,
+        ) = run {
+            when {
+                this == null -> values.toSet().block()
+                else -> filter { values.contains(it) }.toSet().takeUnless { it.isEmpty() }?.block()
             }
         }
+
+        private fun <T> Collection<KProperty<*>>.jsonNullable(property: KProperty<T>) = run {
+            when {
+                contains(property) -> JsonNullable.of(property.getter.call())
+                else -> JsonNullable.undefined()
+            }
+        }
+
+        private fun <T, R> JsonNullable<T>.letPresent(block: (T) -> R) = when {
+            isPresent -> JsonNullable.of(block(get()))
+            else -> JsonNullable.undefined()
+        }
+
+        private fun <T> KMutableProperty<T>.set(
+            value: JsonNullable<T>,
+            dirty: MutableSet<KProperty<*>>? = null,
+        ) {
+            value.ifPresent { new ->
+                if (getter.call() != new) {
+                    setter.call(new)
+                    dirty?.add(this)
+                }
+            }
+        }
+
     }
+
 }

@@ -28,23 +28,23 @@ class RoomController(
     ) = webSocketService.handleRequest(exchange) { session ->
         channelFlow {
             try {
-                println("Player $playerId joined room $roomId")
-                val room = roomContext.getRoom(roomId)
-                val player = room.addPlayer(playerId) {
+                val sendEvent: suspend (Event) -> Unit = {
                     send(session.textMessage(mapper.writeValueAsString(it)))
                 }
 
+                val roomSession = roomContext.session(roomId)
+
                 try {
+                    roomSession.join(playerId, sendEvent)
                     session.receive().collect {  message ->
                         try {
-                            player.process(mapper.readValue(message.payloadAsText))
+                            roomSession.process(playerId, mapper.readValue(message.payloadAsText))
                         } catch (ex: Exception) {
-                            println(ex)
-                            player.send(Event.Error(ex.message ?: ""))
+                            sendEvent(Event.Error(ex.message ?: ""))
                         }
                     }
                 } finally {
-                    room.removePlayer(playerId)
+                    roomSession.leave(playerId)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
