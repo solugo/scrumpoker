@@ -21,7 +21,7 @@ jobs:
       value: ${{ steps.calculate.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-tags: true
           fetch-depth: 0
@@ -36,9 +36,9 @@ jobs:
       - version
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Build
@@ -48,7 +48,7 @@ jobs:
           yarn build
       - name: Store
         if: github.ref_name == 'main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: 'frontend'
           path: 'frontend/dist/*'
@@ -61,9 +61,9 @@ jobs:
       - version
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '21'
@@ -74,7 +74,7 @@ jobs:
           ./gradlew clean check bootJar -Pversion=${{ needs.version.outputs.value }}
       - name: Store
         if: github.ref_name == 'main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: 'backend'
           path: 'backend/build/libs/backend.jar'
@@ -87,7 +87,7 @@ jobs:
       - version
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Package
         run: |-
           helm package chart \
@@ -97,7 +97,7 @@ jobs:
           ;
       - name: Store
         if: github.ref_name == 'main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: 'helm'
           path: 'build/*.tgz'
@@ -114,9 +114,9 @@ jobs:
       - helm
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Login
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -159,7 +159,7 @@ jobs:
         run: |-
           helm upgrade -i scrumpoker oci://ghcr.io/${{ github.repository }}/scrumpoker-helm \
             --version ${{ needs.version.outputs.value }} \
-            --namespace integration \
+            --namespace development \
             --set ingress.enabled=true \
             --set ingress.domain=poker.solugo.dev \
             --set ingress.annotations."kubernetes\.io/ingress\.class"=nginx \
